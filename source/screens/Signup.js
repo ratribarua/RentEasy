@@ -10,6 +10,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import { gsap } from 'gsap-rn';
 
 export default function Signup({ navigation }) {
+
   const [userName, setUserName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
