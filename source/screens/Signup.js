@@ -7,9 +7,9 @@ import { Timestamp, addDoc, collection, doc, updateDoc, query, where, getDocs } 
 import DateTimePicker from '@react-native-community/datetimepicker';
 import moment from 'moment';
 import { FontAwesome } from '@expo/vector-icons';
-import { gsap } from 'gsap-rn';
+//import { gsap } from 'gsap-rn';
 
-export default function Signup({ navigation }) {
+export default function Signup({ props}) {
 
   const [userName, setUserName] = useState('')
   const [email, setEmail] = useState('')
@@ -111,23 +111,11 @@ export default function Signup({ navigation }) {
     }
   };
 
-  useEffect(() => {
-    const view = viewRef.current;
-    gsap.to(view, { duration: 1, transform: { rotate: 360, scale: 1 } });
-  }, [])
-
+  
   return (
-    <ImageBackground
-      source={require('../../assets/books.png')}
-      style={styles.backgroundImage}
-    >
+    
       <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.formContainer}>
-          <Image
-            ref={viewRef}
-            style={styles.logo}
-            source={require('../../assets/icon1.png')}
-          />
+        <View>
           <Text style={styles.title}>Sign Up</Text>
           <TextInput
             style={styles.input}
@@ -191,7 +179,6 @@ export default function Signup({ navigation }) {
             setBirthDate(formattedDate)
             setBirthDateModalStatus(false);
           }}
-      
         />}
           {errorMessage.length > 0 && <Text style={{ color: 'red', textAlign: 'center' }}>{errorMessage}</Text>}
           <TouchableOpacity
@@ -210,7 +197,6 @@ export default function Signup({ navigation }) {
           </View>
         </View>
       </ScrollView>
-    </ImageBackground>
   );
 }
 
@@ -225,7 +211,6 @@ const styles = StyleSheet.create({
     flex: 1,
     resizeMode: 'cover',
     
-    // justifyContent: 'center',
   },
   formContainer: {
     backgroundColor: '#e7eaf6',

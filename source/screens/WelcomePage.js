@@ -1,19 +1,29 @@
 import { StyleSheet, Text, View, Image } from 'react-native'
-import React from 'react'
-import Btn from './Btn'
+
+import React, { useRef, useState, useEffect } from 'react';
+
+import { gsap } from 'gsap-rn';
 
 const WelcomePage = (props) => {
-  //const description = "";
+  const viewRef = useRef(null);
+
+  useEffect(() => {
+    const view = viewRef.current;
+    gsap.to(view, { duration: 5, transform: { rotate: 360, scale: 2.5 } });
+  }, [])
+
   return (
     <View style={styles.container}>
      <View style = {styles.homeTop}>
-      <Image 
-      style={styles.headerImage}
-      resizeMode='contain'
-      source={require("../../assets/welcomepagepic.png")}
-      />
+      <View>
+        <Image
+            ref={viewRef}
+            style={styles.logo}
+            source={require('../../assets/icon3.jpg')}
+          />
+      </View>
       <Text style ={
-        [styles.mainHeader,{fontSize: 40, color:"#4b0082",marginTop:0,
+        [styles.mainHeader,{fontSize: 40, color:"#4b0082",marginTop: 50,
       },]}>
           Rent Easy
       </Text>
@@ -26,9 +36,7 @@ const WelcomePage = (props) => {
      </View>
     );
   }
-  /*<View style={{ marginHorizontal: 30,marginVertical:100}}>
-      <Btn bgColor ={'#2BB789'} textColor={'#4b0082'} btnLabel ={"Let's Start"} Press={() => props.navigation.navigate("HomePage")} />
-      </View>*/
+
   const styles = StyleSheet.create({
     container: {
       display: 'flex',
@@ -45,6 +53,7 @@ const WelcomePage = (props) => {
       justifyContent: 'center',
       alignItems: 'center',
       paddingHorizontal: 10,
+      marginTop: 200,
   
     },
   
@@ -56,6 +65,14 @@ const WelcomePage = (props) => {
       alignItems: 'stretch',
       marginTop: 50,
       borderRadius: 20,
+    },
+
+    logo: {
+      alignSelf: 'center',
+      height: 100,
+      width: 100,
+      marginBottom: 10,
+      marginTop: 15
     },
   
   });

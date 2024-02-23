@@ -15,9 +15,7 @@ const Profile = (props) => {
       <View style={styles.userInfoSection}>
       <View style={{flexDirection: 'row', marginTop: 15}}>
         <Avatar.Image 
-            source={{
-              uri: 'https://api.adorable.io/avatars/80/abott@adorable.png',
-            }}
+            source={require("../../assets/Av.png")}
             size={80}
           />
           <View style={{marginLeft: 20}}>
@@ -45,11 +43,9 @@ const Profile = (props) => {
         </View>
       </View>
 
-      <View style={styles.infoBoxWrapper}>
-          <View style={[styles.infoBox]}>
-            <Title>Details</Title>
+      <View style={[styles.infoBox]}>
+            <Title>Aditional Information</Title>
           </View>
-      </View>
 
       <View style={styles.menuWrapper}>
         <TouchableRipple onPress={() => props.navigation.navigate("HomePage")}>
@@ -90,11 +86,11 @@ const styles = StyleSheet.create({
     marginBottom: 25,
   },
   title: {
-    fontSize: 24,
+    fontSize: 29,
     fontWeight: 'bold',
   },
   caption: {
-    fontSize: 14,
+    fontSize: 15,
     lineHeight: 14,
     fontWeight: '500',
   },
@@ -112,9 +108,12 @@ const styles = StyleSheet.create({
     alignContent: 'center',
   },
   infoBox: {
-    width: '50%',
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
+    fontWeight: 'bold',
+    fontSize: 50,
+    color: '#dddddd',
   },
   menuWrapper: {
     marginTop: 10,
