@@ -7,9 +7,9 @@ import { Timestamp, addDoc, collection, doc, updateDoc, query, where, getDocs } 
 import DateTimePicker from '@react-native-community/datetimepicker';
 import moment from 'moment';
 import { FontAwesome } from '@expo/vector-icons';
-//import { gsap } from 'gsap-rn';
 
-export default function Signup({ props}) {
+
+export default function Signup({navigation}) {
 
   const [userName, setUserName] = useState('')
   const [email, setEmail] = useState('')
@@ -20,7 +20,9 @@ export default function Signup({ props}) {
   const [birthDate, setBirthDate] = useState(moment(new Date()).format('DD/MM/YYYY'))
   const [birthDateModalStatus, setBirthDateModalStatus] = useState(false)
   const [loading, setLoading] = useState(false)
-  const viewRef = useRef(null);
+  const [semester, setSemester] = useState('')
+  const [contactNumber, setContactNumber] = useState('')
+
 
   const userNameMessages = [
     ["This is a unique Username", 'green'],
@@ -35,6 +37,8 @@ export default function Signup({ props}) {
     setConfirmPassword('')
     setUserName('')
     setBirthDate('')
+    setSemester('')
+    setContactNumber('')
     setUserNameErrorMessage(['', ''])
   }
 
@@ -62,8 +66,10 @@ export default function Signup({ props}) {
 
       const docRef = await addDoc(usersRef, {
         "userName": userName,
+        "semester": semester,
         "email": email,
-        "dp_url": "images/avatar.png",
+        "Phone_Number": contactNumber,
+        //"dp_url": "images/avatar.png",
         "joiningDate": Timestamp.fromDate(new Date()),
         'birthday': birthDate,
         "user_id": ''
@@ -100,9 +106,16 @@ export default function Signup({ props}) {
   }
 
   const onSignUpPress = async () => {
-    if (email.length === 0 || password.length === 0 || userName.length === 0) {
+    if (email.length === 0 ||
+        password.length === 0 || 
+        userName.length === 0 || 
+        contactNumber.length === 0) {
       setErrorMessage("Please provide all the necessary information");
-    } else if (email.length > 0 && password.length > 0 && confirmPassword.length > 0 && userName.length > 0) {
+    } else if (email.length > 0 && 
+               password.length > 0 && 
+               confirmPassword.length > 0 && 
+               userName.length > 0 &&
+               contactNumber.length > 0) {
       if (password === confirmPassword ) registerWithEmail();
       else if (password !== confirmPassword) setErrorMessage("Passwords do not match");
       //else setErrorMessage("Please provide a valid username");
@@ -113,7 +126,6 @@ export default function Signup({ props}) {
 
   
   return (
-    
       <ScrollView contentContainerStyle={styles.container}>
         <View>
           <Text style={styles.title}>Sign Up</Text>
@@ -127,6 +139,18 @@ export default function Signup({ props}) {
             autoCapitalize="none"
           />
           {userNameErrorMessage[0].length > 0 && userName.length > 0 && <Text style={{ color: userNameErrorMessage[1], paddingLeft: 20, fontSize: 13 }}>{userNameErrorMessage[0]}</Text>}
+          
+          <TextInput
+            style={styles.input}
+            placeholderTextColor="#aaaaaa"
+            placeholder='Semester'
+            onChangeText={(text) => setSemester(text)}
+            value={semester}
+            underlineColorAndroid="transparent"
+            autoCapitalize="none"
+          />
+
+
           <TextInput
             style={styles.input}
             placeholder='E-mail'
@@ -136,6 +160,17 @@ export default function Signup({ props}) {
             underlineColorAndroid="transparent"
             autoCapitalize="none"
           />
+          <TextInput
+           style={styles.input}
+           placeholder='Contact Number'
+           placeholderTextColor="#aaaaaa"
+           onChangeText={(text) => setContactNumber(text)}
+           value={contactNumber}
+           underlineColorAndroid="transparent"
+           autoCapitalize="none"
+          />
+
+
           <TextInput
             style={styles.input}
             placeholderTextColor="#aaaaaa"
@@ -192,7 +227,7 @@ export default function Signup({ props}) {
           <View style={styles.footerView}>
             <Text style={styles.footerText}>Already have an account? <Text onPress={() => {
               setAllNone()
-              navigation.navigate('LogIn')
+              navigation.navigate('Login')
             }} style={styles.footerLink}>Log In</Text></Text>
           </View>
         </View>
@@ -207,48 +242,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding:10,
   },
-  backgroundImage: {
-    flex: 1,
-    resizeMode: 'cover',
-    
-  },
-  formContainer: {
-    backgroundColor: '#e7eaf6',
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
-    width: '80%',
-    marginBottom: 10,
-  },
-  logo: {
-    alignSelf: 'center',
-    height: 120,
-    width: 120,
-    marginBottom: 8,
-    marginTop: 15
-  },
+
   title: {
-    fontSize: 24,
+    fontSize: 30,
     marginBottom: 10,
-    color: '#38598b',
+    color: '#4b0082',
     fontWeight: 'bold',
     textAlign: 'center',
   },
   input: {
     height: 60,
-    borderColor: 'gray',
-    borderWidth: 1,
+    //borderColor: 'gray',
+    //borderWidth: 1,
     marginBottom: 16,
     paddingLeft: 8,
-    backgroundColor: 'white',
-    borderRadius: 12,
+    backgroundColor: '#e6e6fa',
+    //borderRadius: 12,
   },
   birthdayPicker: {
     height: 48,
@@ -263,16 +272,17 @@ const styles = StyleSheet.create({
     paddingLeft: 16
   },
   button: {
-    backgroundColor: '#38598b',
+    backgroundColor: '#32cd32',
     padding: 15,
-    borderRadius: 12,
+    borderRadius: 150,
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
+    width: 350,
   },
   buttonTitle: {
-    color: 'white',
-    fontSize: 18,
+    color: '#4b0082',
+    fontSize: 25,
   },
   footerView: {
     marginTop: 20,
@@ -284,7 +294,7 @@ const styles = StyleSheet.create({
     color: '#38598b',
   },
   footerLink: {
-    color: '#FF004D',
+    color: '#8b008b',
     fontWeight: 'bold',
     fontSize: 16,
   },
@@ -308,7 +318,7 @@ const styles = StyleSheet.create({
 
 
 
-/////////////////mine/////////////////////////
+//////////////////////////////////////////
 
 // import React from 'react';
 // import {View, Text, Touchable, TouchableOpacity} from 'react-native';

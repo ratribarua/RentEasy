@@ -18,9 +18,10 @@ export default function RatingScreen() {
 
       <Rating 
       type='star' // heart, star, bell, rocket
+        r
         ratingCount={5}
         showRating={true}
-        ratingTextColor="red"
+        ratingTextColor="#4b0082"
         fractions={1} // 0-20
         jumpValue={0.5}
         startingValue={5}

@@ -13,13 +13,14 @@ const DrawerList = [
   {icon: 'open-in-new', label: 'Signup', navigateTo: 'Signup'},
   {icon: 'exit-to-app', label: 'Sign Out', navigateTo: 'WelcomePage'},
   {icon: 'star', label: 'Rate This App', navigateTo: 'RatingScreen'},
+  {icon: 'star', label: 'Post', navigateTo: 'PostBookScreen'},
 ];
 const DrawerLayout = ({icon, label, navigateTo}) => {
   const navigation = useNavigation();
   // console.log(userData);
   return (
     <DrawerItem
-      icon={({color, size}) => <Icon name={icon} color={'orange'} size={35} />}
+      icon={({color, size}) => <Icon name={icon} color={'#4b0082'} size={35} />}
       label={label}
       onPress={() => {
         navigation.navigate(navigateTo);
@@ -82,10 +83,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     // marginRight: 15,
   },
-  paragraph: {
-    fontWeight: 'bold',
-    marginRight: 3,
-  },
+  
   drawerSection: {
     marginTop: 15,
     borderBottomWidth: 0,

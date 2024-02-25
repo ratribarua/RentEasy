@@ -23,9 +23,9 @@ const WelcomePage = (props) => {
           />
       </View>
       <Text style ={
-        [styles.mainHeader,{fontSize: 40, color:"#4b0082",marginTop: 50,
+        [styles.mainHeader,{fontSize: 40, color:"#4b0082",marginTop: 50, alignItems: 'center',
       },]}>
-          Rent Easy
+          RentEasy
       </Text>
       <Text style ={
         [styles.mainHeader,{fontSize: 30, color:"#9370db",marginTop:0,

@@ -8,10 +8,12 @@ import Login from './source/screens/Login';
 import WelcomePage from './source/screens/WelcomePage';
 import HomePage from './source/screens/HomePage';
 import Signup from './source/screens/Signup';
-import Profile from './source/screens/Profile';
+
 import DrawerContent from './source/screens/DrawerContent';
 import Edit from './source/screens/Edit';
 import RatingScreen from './source/screens/RatingScreen';
+import Profile from './source/screens/Profile';
+import PostBookScreen from './source/screens/PostBookScreen';
 
 
 
@@ -22,11 +24,11 @@ const StackNav =() =>{
   return(
     <Stack.Navigator initialRouteName='WelcomePage'
     screenOptions={{
-      statusBarColor: '#0163d2',
+      //statusBarColor: '#0163d2',
       headerStyle: {
-        backgroundColor: '#0163d2',
+        backgroundColor: '#00bfff',
       },
-      headerTintColor: '#fff',
+      headerTintColor: '#00bfff',
       headerTitleAlign: 'center',
       headerLeft: ()=> {
         return (
@@ -46,6 +48,7 @@ const StackNav =() =>{
       <Stack.Screen name="Profile" component={Profile} />
       <Stack.Screen name="Edit" component={Edit} />
       <Stack.Screen name="RatingScreen" component={RatingScreen} />
+      <Stack.Screen name="PostBookScreen" component={PostBookScreen} />
     </Stack.Navigator>
   )
 }
