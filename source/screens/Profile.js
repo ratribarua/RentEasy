@@ -1,5 +1,5 @@
 import { StyleSheet,SafeAreaView, View, TouchableOpacity } from 'react-native'
-import React from 'react'
+
 import {
   Avatar,
   Title,
@@ -8,72 +8,76 @@ import {
   TouchableRipple,
 } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import React, { useState, useEffect } from 'react';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { auth, db } from './firebaseConfig';
+
+
+
 
 const Profile = (props) => {
+  const [userData, setUserData] = useState(null);
+  
+  useEffect(() => {
+    // Fetch user data from Firebase using the stored UID or any identifier
+    const fetchUserData = async () => {
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('user_id', '==', 'user_id')); // Replace 'stored_uid_here' with the actual stored UID
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach((doc) => {
+        setUserData(doc.data());
+      });
+    };
+
+    fetchUserData();
+  }, []);
+
   return (
-    <SafeAreaView style = {styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.userInfoSection}>
-      <View style={{flexDirection: 'row', marginTop: 15}}>
-        <Avatar.Image 
-            source={require("../../assets/Av.png")}
-            size={80}
-          />
-          <View style={{marginLeft: 20}}>
-            <Title style={[styles.title, {
-              marginTop:15,
-              marginBottom: 5,
-            }]}>Ratri</Title>
-            <Caption style={styles.caption}>@Ratri</Caption>
+        <View style={{ flexDirection: 'row', marginTop: 15 }}>
+          <Avatar.Image source={{ uri: userData?.dp_url || 'default_profile_image_url' }} size={80} />
+          <View style={{ marginLeft: 20 }}>
+            <Title style={[styles.title, { marginTop: 15, marginBottom: 5 }]}>{userData?.userName}</Title>
+            <Caption style={styles.caption}>@{userData?.userName}</Caption>
           </View>
         </View>
       </View>
-      
+
       <View style={styles.userInfoSection}>
-        <View style={styles.row}>
-          <Icon name="map-marker-radius" color="#777777" size={20}/>
-          <Text style={{color:"#777777", marginLeft: 20}}>Chittagong, Bangladesh</Text>
-        </View>
-        <View style={styles.row}>
-          <Icon name="phone" color="#777777" size={20}/>
-          <Text style={{color:"#777777", marginLeft: 20}}>01819876522</Text>
-        </View>
-        <View style={styles.row}>
-          <Icon name="email" color="#777777" size={20}/>
-          <Text style={{color:"#777777", marginLeft: 20}}>Ratri@gmail.com</Text>
-        </View>
+        {/* Display other user information */}
       </View>
 
       <View style={[styles.infoBox]}>
-            <Title>Aditional Information</Title>
-          </View>
+        <Title>Additional Information</Title>
+        {/* Display additional information */}
+      </View>
 
       <View style={styles.menuWrapper}>
-        <TouchableRipple onPress={() => props.navigation.navigate("HomePage")}>
+        <TouchableRipple onPress={() => props.navigation.navigate('HomePage')}>
           <View style={styles.menuItem}>
-            <Icon name="book-arrow-right" color="#FF6347" size={25}/>
+            <Icon name="book-arrow-right" color="#FF6347" size={25} />
             <Text style={styles.menuItemText}>My Books(to give rent)</Text>
           </View>
         </TouchableRipple>
-        
+
         <TouchableRipple onPress={() => {}}>
           <View style={styles.menuItem}>
-            <Icon name="book-arrow-left-outline" color="#FF6347" size={25}/>
+            <Icon name="book-arrow-left-outline" color="#FF6347" size={25} />
             <Text style={styles.menuItemText}>Borrowed</Text>
           </View>
         </TouchableRipple>
 
-        <TouchableRipple onPress={() => props.navigation.navigate("Edit")}>
+        <TouchableRipple onPress={() => props.navigation.navigate('Edit')}>
           <View style={styles.menuItem}>
-            <Icon name="cog-outline" color="#FF6347" size={25}/>
+            <Icon name="cog-outline" color="#FF6347" size={25} />
             <Text style={styles.menuItemText}>Edit Profile</Text>
           </View>
         </TouchableRipple>
-        
       </View>
-
     </SafeAreaView>
-  )
-}
+  );
+};
 
 export default Profile
 

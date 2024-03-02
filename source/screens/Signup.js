@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useEffect } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ImageBackground } from 'react-native';
 import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
@@ -21,7 +20,7 @@ export default function Signup({navigation}) {
   const [birthDateModalStatus, setBirthDateModalStatus] = useState(false)
   const [loading, setLoading] = useState(false)
   const [semester, setSemester] = useState('')
-  const [contactNumber, setContactNumber] = useState('')
+  //const [contactNumber, setContactNumber] = useState('')
 
 
   const userNameMessages = [
@@ -38,7 +37,7 @@ export default function Signup({navigation}) {
     setUserName('')
     setBirthDate('')
     setSemester('')
-    setContactNumber('')
+    //setContactNumber('')
     setUserNameErrorMessage(['', ''])
   }
 
@@ -68,8 +67,8 @@ export default function Signup({navigation}) {
         "userName": userName,
         "semester": semester,
         "email": email,
-        "Phone_Number": contactNumber,
-        //"dp_url": "images/avatar.png",
+        //"Phone_Number": contactNumber,
+        "dp_url": "../../assets/Av.png",
         "joiningDate": Timestamp.fromDate(new Date()),
         'birthday': birthDate,
         "user_id": ''
@@ -108,14 +107,18 @@ export default function Signup({navigation}) {
   const onSignUpPress = async () => {
     if (email.length === 0 ||
         password.length === 0 || 
-        userName.length === 0 || 
-        contactNumber.length === 0) {
+        userName.length === 0 
+        //|| 
+        //contactNumber.length === 0
+        ) {
       setErrorMessage("Please provide all the necessary information");
     } else if (email.length > 0 && 
                password.length > 0 && 
                confirmPassword.length > 0 && 
-               userName.length > 0 &&
-               contactNumber.length > 0) {
+               userName.length > 0 
+               //&&
+               //contactNumber.length > 0
+               ) {
       if (password === confirmPassword ) registerWithEmail();
       else if (password !== confirmPassword) setErrorMessage("Passwords do not match");
       //else setErrorMessage("Please provide a valid username");
@@ -160,7 +163,7 @@ export default function Signup({navigation}) {
             underlineColorAndroid="transparent"
             autoCapitalize="none"
           />
-          <TextInput
+          {/* <TextInput
            style={styles.input}
            placeholder='Contact Number'
            placeholderTextColor="#aaaaaa"
@@ -168,7 +171,7 @@ export default function Signup({navigation}) {
            value={contactNumber}
            underlineColorAndroid="transparent"
            autoCapitalize="none"
-          />
+          /> */}
 
 
           <TextInput

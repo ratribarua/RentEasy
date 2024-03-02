@@ -13,7 +13,7 @@ import DrawerContent from './source/screens/DrawerContent';
 import Edit from './source/screens/Edit';
 import RatingScreen from './source/screens/RatingScreen';
 import Profile from './source/screens/Profile';
-import PostBookScreen from './source/screens/PostBookScreen';
+import AddPostScreen from './source/screens/AddPostScreen';
 
 
 
@@ -48,7 +48,7 @@ const StackNav =() =>{
       <Stack.Screen name="Profile" component={Profile} />
       <Stack.Screen name="Edit" component={Edit} />
       <Stack.Screen name="RatingScreen" component={RatingScreen} />
-      <Stack.Screen name="PostBookScreen" component={PostBookScreen} />
+      <Stack.Screen name="AddPostScreen" component={AddPostScreen} />
     </Stack.Navigator>
   )
 }

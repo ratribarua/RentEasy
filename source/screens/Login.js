@@ -37,7 +37,7 @@ export default function Login({ navigation }) {
                             userRef: user_id,
                             userEmail: email,
                             userName: userName,
-                            // userProfilePic: dp_url
+                            userProfilePic: dp_url
                         };
                         if (isRememberMeChecked) {
                             const loggedUserInfoString = JSON.stringify(loggedUserInfo);
@@ -52,7 +52,7 @@ export default function Login({ navigation }) {
                         setEmail('');
                         setPassword('');
                         setLoading(false);
-                        navigation.navigate('Profile'); // Navigate to the home screen
+                        //navigation.navigate('Profile'); // Navigate to the home screen
 
                     });
                 } else {
@@ -75,6 +75,25 @@ export default function Login({ navigation }) {
             setLoading(false);
         }
     };
+
+    const onLoginPress = () =>{
+        loginhere(); //login user
+    }
+
+    useEffect(() => {
+        const checkLoggedIn = async () => {
+            const userData = await AsyncStorage.getItem('userData');
+            if (userData) {
+              const parsedUserData = JSON.parse(userData);
+              update_user_info(parsedUserData)
+              navigation.navigate('Profile')
+            } else {
+              // User data doesn't exist, show login screen
+              // or redirect to the login page
+            }
+          };
+          checkLoggedIn()
+    }, [])
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
@@ -113,7 +132,7 @@ export default function Login({ navigation }) {
             <TouchableOpacity
                 disabled={password.length === 0 || email.length === 0}
                 style={styles.button}
-                onPress={loginhere}>
+                onPress={onLoginPress}>
                 <Text style={styles.buttonTitle}>
                     Log in
                 </Text>
