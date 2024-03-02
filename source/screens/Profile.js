@@ -17,36 +17,48 @@ import { auth, db } from './firebaseConfig';
 
 const Profile = (props) => {
   const [userData, setUserData] = useState(null);
-  
-  useEffect(() => {
-    // Fetch user data from Firebase using the stored UID or any identifier
-    const fetchUserData = async () => {
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef, where('user_id', '==', 'user_id')); // Replace 'stored_uid_here' with the actual stored UID
-      const querySnapshot = await getDocs(q);
-      querySnapshot.forEach((doc) => {
-        setUserData(doc.data());
-      });
-    };
 
-    fetchUserData();
+  const getUserData = async() =>{
+    const querySnapshot = await getDocs(collection(db, "users"));
+    querySnapshot.forEach((doc) => {
+    console.log(doc.id , doc.data());
+    setUserData({
+      ...doc.data(),
+      id: doc.id,
+    });
+   });
+  };
+
+  useEffect(() => {
+    getUserData();
   }, []);
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.userInfoSection}>
-        <View style={{ flexDirection: 'row', marginTop: 15 }}>
-          <Avatar.Image source={{ uri: userData?.dp_url || 'default_profile_image_url' }} size={80} />
-          <View style={{ marginLeft: 20 }}>
-            <Title style={[styles.title, { marginTop: 15, marginBottom: 5 }]}>{userData?.userName}</Title>
-            <Caption style={styles.caption}>@{userData?.userName}</Caption>
-          </View>
+    <View style={styles.userInfoSection}>
+      <View style={{ flexDirection: 'row', marginTop: 15 }}>
+        <Avatar.Image source={{ uri: userData?.dp_url || 'default_profile_image_url' }} size={80} />
+        <View style={{ marginLeft: 20 }}>
+          <Title style={[styles.title, { marginTop: 15, marginBottom: 5 }]}>{userData?.userName}</Title>
+          <Caption style={styles.caption}>@{userData?.userName}</Caption>
         </View>
       </View>
+    </View>
 
-      <View style={styles.userInfoSection}>
-        {/* Display other user information */}
+    <View style={styles.userInfoSection}>
+      <View style={styles.row}>
+        <Icon name="account" color="#777777" size={20} />
+        <Text style={{ marginLeft: 20, color: '#777777', fontSize: 16 }}>{userData?.userName}</Text>
       </View>
+      <View style={styles.row}>
+        <Icon name="book" color="#777777" size={20} />
+        <Text style={{ marginLeft: 20, color: '#777777', fontSize: 16 }}>{userData?.semester}</Text>
+      </View>
+      <View style={styles.row}>
+        <Icon name="email" color="#777777" size={20} />
+        <Text style={{ marginLeft: 20, color: '#777777', fontSize: 16 }}>{userData?.email}</Text>
+      </View>
+    </View>
 
       <View style={[styles.infoBox]}>
         <Title>Additional Information</Title>
@@ -135,3 +147,21 @@ const styles = StyleSheet.create({
     lineHeight: 26,
   },
 });
+
+
+
+
+ // <SafeAreaView style={styles.container}>
+    //   <View style={styles.userInfoSection}>
+    //     <View style={{ flexDirection: 'row', marginTop: 15 }}>
+    //       <Avatar.Image source={{ uri: userData?.dp_url || 'default_profile_image_url' }} size={80} />
+    //       <View style={{ marginLeft: 20 }}>
+    //         <Title style={[styles.title, { marginTop: 15, marginBottom: 5 }]}>{userData?.userName}</Title>
+    //         <Caption style={styles.caption}>@{userData?.userName}</Caption>
+    //       </View>
+    //     </View>
+    //   </View>
+
+    //   <View style={styles.userInfoSection}>
+    //     {/* Display other user information */}
+    //   </View>

@@ -52,7 +52,7 @@ export default function Login({ navigation }) {
                         setEmail('');
                         setPassword('');
                         setLoading(false);
-                        //navigation.navigate('Profile'); // Navigate to the home screen
+                        navigation.replace('Profile'); // Navigate to the home screen
 
                     });
                 } else {

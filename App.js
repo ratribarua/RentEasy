@@ -12,8 +12,9 @@ import Signup from './source/screens/Signup';
 import DrawerContent from './source/screens/DrawerContent';
 import Edit from './source/screens/Edit';
 import RatingScreen from './source/screens/RatingScreen';
-import Profile from './source/screens/Profile';
-import AddPostScreen from './source/screens/AddPostScreen';
+import Profile from './source/screens/profile';
+
+///import AddPostScreen from './source/screens/AddPostScreen';
 
 
 
@@ -45,10 +46,10 @@ const StackNav =() =>{
       <Stack.Screen name="HomePage" component={HomePage} />
       <Stack.Screen name="Login" component={Login} />
       <Stack.Screen name="Signup" component={Signup} />
+      <Stack.Screen name="Signup" component={Signup} />
       <Stack.Screen name="Profile" component={Profile} />
-      <Stack.Screen name="Edit" component={Edit} />
       <Stack.Screen name="RatingScreen" component={RatingScreen} />
-      <Stack.Screen name="AddPostScreen" component={AddPostScreen} />
+      
     </Stack.Navigator>
   )
 }
@@ -76,3 +77,4 @@ function App() {
 
 export default App;
 //screenOptions={{headerShown: false}
+//<Stack.Screen name="AddPostScreen" component={AddPostScreen} />
