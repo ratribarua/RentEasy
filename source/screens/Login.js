@@ -10,7 +10,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { Checkbox } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 
-export default function Login({ navigation }) {
+
+
+export default function Login({navigation }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false); // Added state to manage password visibility
@@ -34,12 +36,13 @@ export default function Login({ navigation }) {
                     const querySnapshot = await getDocs(q);
                     querySnapshot.forEach((doc) => {
                         const userData = doc.data();
-                        const { userName, user_id, email, dp_url } = userData;
+                        const { userName, user_id, email, dp_url,semester } = userData;
                         const loggedUserInfo = {
                             userRef: user_id,
                             userEmail: email,
                             userName: userName,
-                            userProfilePic: dp_url
+                            userProfilePic: dp_url,
+                            semester : semester
                         };
                         if (isRememberMeChecked) {
                             const loggedUserInfoString = JSON.stringify(loggedUserInfo);
@@ -54,9 +57,7 @@ export default function Login({ navigation }) {
                         setEmail('');
                         setPassword('');
                         setLoading(false);
-                        navigation.navigate("ProfileScreen", {
-                            userData: loggedUserInfo,
-                          }); // Navigate to the profile screen
+                        navigation.replace("ProfileScreen"); // Navigate to the profile screen
 
                     });
                 } else {
@@ -158,7 +159,7 @@ export default function Login({ navigation }) {
             <View style={styles.footerView}>
                 <Text style={styles.footerText}>
                 <Text onPress={() => {
-                    navigation.navigate('ProfileScreen')
+                    navigation.replace('ProfileScreen')
                 }} style={styles.footerLink}>
                 Profile
                 </Text>
