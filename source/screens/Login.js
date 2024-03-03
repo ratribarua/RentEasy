@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, ActivityIndicator, Alert } from 'react-native';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, firestore } from './firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
+
 import { Ionicons } from '@expo/vector-icons';
 import { Checkbox } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
@@ -52,7 +54,9 @@ export default function Login({ navigation }) {
                         setEmail('');
                         setPassword('');
                         setLoading(false);
-                        navigation.replace('Profile'); // Navigate to the home screen
+                        navigation.navigate("ProfileScreen", {
+                            userData: loggedUserInfo,
+                          }); // Navigate to the profile screen
 
                     });
                 } else {
@@ -84,12 +88,14 @@ export default function Login({ navigation }) {
         const checkLoggedIn = async () => {
             const userData = await AsyncStorage.getItem('userData');
             if (userData) {
-              const parsedUserData = JSON.parse(userData);
+              try{
+                const parsedUserData = JSON.parse(userData);
               update_user_info(parsedUserData)
-              navigation.navigate('Profile')
-            } else {
-              // User data doesn't exist, show login screen
-              // or redirect to the login page
+              navigation.navigate('ProfileScreen')
+              }
+            catch(error){
+                console.warn('Error parsing stored user data:', error); 
+            }
             }
           };
           checkLoggedIn()
@@ -152,7 +158,7 @@ export default function Login({ navigation }) {
             <View style={styles.footerView}>
                 <Text style={styles.footerText}>
                 <Text onPress={() => {
-                    navigation.navigate('Profile')
+                    navigation.navigate('ProfileScreen')
                 }} style={styles.footerLink}>
                 Profile
                 </Text>

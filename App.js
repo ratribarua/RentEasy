@@ -12,7 +12,9 @@ import Signup from './source/screens/Signup';
 import DrawerContent from './source/screens/DrawerContent';
 import Edit from './source/screens/Edit';
 import RatingScreen from './source/screens/RatingScreen';
-import Profile from './source/screens/profile';
+import ProfileScreen from './source/screens/ProfileScreen';
+
+
 
 ///import AddPostScreen from './source/screens/AddPostScreen';
 
@@ -46,8 +48,8 @@ const StackNav =() =>{
       <Stack.Screen name="HomePage" component={HomePage} />
       <Stack.Screen name="Login" component={Login} />
       <Stack.Screen name="Signup" component={Signup} />
-      <Stack.Screen name="Signup" component={Signup} />
-      <Stack.Screen name="Profile" component={Profile} />
+      <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+      
       <Stack.Screen name="RatingScreen" component={RatingScreen} />
       
     </Stack.Navigator>
