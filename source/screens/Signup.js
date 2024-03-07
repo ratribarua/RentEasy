@@ -68,7 +68,7 @@ export default function Signup({navigation}) {
         "semester": semester,
         "email": email,
         //"Phone_Number": contactNumber,
-        "dp_url": "../../assets/Av.png",
+        "dp_url": "",
         "joiningDate": Timestamp.fromDate(new Date()),
         'birthday': birthDate,
         "user_id": ''

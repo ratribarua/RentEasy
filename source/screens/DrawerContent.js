@@ -11,9 +11,9 @@ const DrawerList = [
   {icon: 'home-outline', label: 'Welcome Home', navigateTo: 'WelcomePage'},
   {icon: 'login', label: 'Login', navigateTo: 'Login'},
   {icon: 'open-in-new', label: 'Signup', navigateTo: 'Signup'},
-  {icon: 'exit-to-app', label: 'Sign Out', navigateTo: 'WelcomePage'},
+  {icon: 'account-circle', label: 'Profile', navigateTo: 'ProfileScreen'},
   {icon: 'star', label: 'Rate This App', navigateTo: 'RatingScreen'},
-  {icon: 'star', label: 'Post', navigateTo: 'PostBookScreen'},
+  {icon: 'star', label: 'Post', navigateTo: 'PostScreen'},
 ];
 const DrawerLayout = ({icon, label, navigateTo}) => {
   const navigation = useNavigation();

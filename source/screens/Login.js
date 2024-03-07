@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image,
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth, firestore } from './firebaseConfig';
+import { auth, db } from './firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 
 import { Ionicons } from '@expo/vector-icons';
@@ -30,8 +30,10 @@ export default function Login({navigation }) {
             .then(async (userCredential) => {
                 const user = userCredential.user;
                 alert("Logged in")
+                navigation.navigate("ProfileScreen");
+                
                 if (user.emailVerified) {
-                    const usersRef = collection(firestore, "users");
+                    const usersRef = collection(db, "users");
                     const q = query(usersRef, where("email", "==", email));
                     const querySnapshot = await getDocs(q);
                     querySnapshot.forEach((doc) => {
@@ -44,6 +46,7 @@ export default function Login({navigation }) {
                             userProfilePic: dp_url,
                             semester : semester
                         };
+                        
                         if (isRememberMeChecked) {
                             const loggedUserInfoString = JSON.stringify(loggedUserInfo);
                             AsyncStorage.setItem('userData', loggedUserInfoString)
@@ -57,8 +60,9 @@ export default function Login({navigation }) {
                         setEmail('');
                         setPassword('');
                         setLoading(false);
-                        navigation.replace("ProfileScreen"); // Navigate to the profile screen
+                        // Navigate to the profile screen
 
+                        navigation.navigate("ProfileScreen");
                     });
                 } else {
                     Alert.alert("Please verify your email first.");
@@ -85,22 +89,22 @@ export default function Login({navigation }) {
         loginhere(); //login user
     }
 
-    useEffect(() => {
-        const checkLoggedIn = async () => {
-            const userData = await AsyncStorage.getItem('userData');
-            if (userData) {
-              try{
-                const parsedUserData = JSON.parse(userData);
-              update_user_info(parsedUserData)
-              navigation.navigate('ProfileScreen')
-              }
-            catch(error){
-                console.warn('Error parsing stored user data:', error); 
-            }
-            }
-          };
-          checkLoggedIn()
-    }, [])
+    // useEffect(() => {
+    //     const checkLoggedIn = async () => {
+    //         const userData = await AsyncStorage.getItem('userData');
+    //         if (userData) {
+    //           try{
+    //             const parsedUserData = JSON.parse(userData);
+    //           update_user_info(parsedUserData)
+    //           navigation.navigate('ProfileScreen')
+    //           }
+    //         catch(error){
+    //             console.warn('Error parsing stored user data:', error); 
+    //         }
+    //         }
+    //       };
+    //       checkLoggedIn()
+    // }, [])
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
