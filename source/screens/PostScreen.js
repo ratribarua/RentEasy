@@ -1,193 +1,223 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, FlatList ,ScrollView} from 'react-native';
-import { Avatar, Title, Caption, Text as PaperText, TouchableRipple } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNavigation } from '@react-navigation/native';
-import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
+// PostScreen.js
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, FlatList } from 'react-native';
+import { collection, addDoc, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { auth, db } from './firebaseConfig';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-const PostScreen = () => {
-  //get user info states
-  const [userData, setUserData] = useState(null);
-  const navigation = useNavigation();
-
-  //blog states
-  const [blogs, setBlogs] = useState([]);
+const PostScreen = ({ navigation }) => {
   const [newBlogTitle, setNewBlogTitle] = useState('');
   const [newBlogContent, setNewBlogContent] = useState('');
-  
-  //fetching user data
-  const getUserData = async () => {
-    try {
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef, where('email', '==', auth.currentUser.email));
-      const querySnapshot = await getDocs(q);
-      querySnapshot.forEach((doc) => {
-        const userData = doc.data();
-        const { userName, user_id, email, dp_url, semester } = userData;
-        const loggedUserData = {
-          userRef: user_id,
-          email: email,
-          userName: userName,
-          userProfilePic: dp_url,
-          semester: semester,
-        };
-        setUserData(loggedUserData);
-      });
-    } catch (e) {
-      console.log(e);
-    }
-  };
+  const [blogs, setBlogs] = useState([]);
+  const [newComment, setNewComment] = useState('');
+
+  //for like and dislike buttons
+  const [likedBlogs, setLikedBlogs] = useState([]);
+  const [dislikedBlogs, setDislikedBlogs] = useState([]);
 
   useEffect(() => {
-    getUserData();
-    fetchBlogs(); // Fetch blogs on component mount
-  }, []);
-  
-  //fetching blogs of that user
-  const fetchBlogs = async () => {
-    try {
-      const blogsRef = collection(db, 'blogs');
-      const querySnapshot = await getDocs(blogsRef);
+    // Real-time update for blogs
+    const unsubscribe = onSnapshot(collection(db, 'blogs'), (snapshot) => {
       const blogsData = [];
-
-      querySnapshot.forEach((doc) => {
+      snapshot.forEach((doc) => {
         const blogData = doc.data();
         blogData.id = doc.id;
         blogsData.push(blogData);
       });
-
       setBlogs(blogsData);
-    } catch (error) {
-      console.error('Error fetching blogs:', error);
-    }
-  };
+    });
 
-  
-
-  const handlePostBlog = async () => {
+    // Cleanup the listener when the component is unmounted
+    return () => unsubscribe();
+  }, []);
+  const handleLike = async (blogId) => {
     try {
-      const date = new Date().toISOString();
-      const blogData = {
-        title: newBlogTitle,
-        content: newBlogContent,
-        comments: [],
-        likes: 0,
-        dislikes: 0,
-        userId: userData?.userRef,
-        userName: userData?.userName,
-        date: date,
-      };
+      const blogRef = doc(db, 'blogs', blogId);
+      const currentBlog = blogs.find((blog) => blog.id === blogId);
 
-      const blogsRef = collection(db, 'blogs');
-      await addDoc(blogsRef, blogData);
+      if (!currentBlog.userLiked && !currentBlog.userDisliked) {
+        const newLikes = currentBlog.likes + 1;
+        await updateDoc(blogRef, { likes: newLikes });
 
-      // You may want to provide user feedback here (e.g., show a success message)
-      console.log('Blog posted successfully!');
+        setBlogs((prevBlogs) =>
+          prevBlogs.map((blog) =>
+            blog.id === blogId
+              ? { ...blog, likes: newLikes, userLiked: true, userDisliked: false }
+              : blog
+          )
+        );
+      } else if (currentBlog.userLiked) {
+        // User already liked, toggle to neutral
+        const newLikes = currentBlog.likes - 1;
+        await updateDoc(blogRef, { likes: newLikes });
 
-      // Refetch blogs to update the list
-      fetchBlogs();
+        setBlogs((prevBlogs) =>
+          prevBlogs.map((blog) =>
+            blog.id === blogId
+              ? { ...blog, likes: newLikes, userLiked: false, userDisliked: false }
+              : blog
+          )
+        );
+      } else if (currentBlog.userDisliked) {
+        // User disliked, toggle to like
+        const newLikes = currentBlog.likes + 1;
+        const newDislikes = currentBlog.dislikes - 1;
+
+        await updateDoc(blogRef, { likes: newLikes, dislikes: newDislikes });
+
+        setBlogs((prevBlogs) =>
+          prevBlogs.map((blog) =>
+            blog.id === blogId
+              ? { ...blog, likes: newLikes, dislikes: newDislikes, userLiked: true, userDisliked: false }
+              : blog
+          )
+        );
+      }
     } catch (error) {
-      console.error('Error posting blog:', error);
+      console.error('Error updating likes:', error);
     }
   };
+
+  const handleDislike = async (blogId) => {
+    try {
+      const blogRef = doc(db, 'blogs', blogId);
+      const currentBlog = blogs.find((blog) => blog.id === blogId);
+
+      if (!currentBlog.userLiked && !currentBlog.userDisliked) {
+        const newDislikes = currentBlog.dislikes + 1;
+        await updateDoc(blogRef, { dislikes: newDislikes });
+
+        setBlogs((prevBlogs) =>
+          prevBlogs.map((blog) =>
+            blog.id === blogId
+              ? { ...blog, dislikes: newDislikes, userLiked: false, userDisliked: true }
+              : blog
+          )
+        );
+      } else if (currentBlog.userDisliked) {
+        // User already disliked, toggle to neutral
+        const newDislikes = currentBlog.dislikes - 1;
+        await updateDoc(blogRef, { dislikes: newDislikes });
+
+        setBlogs((prevBlogs) =>
+          prevBlogs.map((blog) =>
+            blog.id === blogId
+              ? { ...blog, dislikes: newDislikes, userLiked: false, userDisliked: false }
+              : blog
+          )
+        );
+      } else if (currentBlog.userLiked) {
+        // User liked, toggle to dislike
+        const newLikes = currentBlog.likes - 1;
+        const newDislikes = currentBlog.dislikes + 1;
+
+        await updateDoc(blogRef, { likes: newLikes, dislikes: newDislikes });
+
+        setBlogs((prevBlogs) =>
+          prevBlogs.map((blog) =>
+            blog.id === blogId
+              ? { ...blog, likes: newLikes, dislikes: newDislikes, userLiked: false, userDisliked: true }
+              : blog
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error updating dislikes:', error);
+    }
+  };
+  
+ 
+  const handleAddComment = async (blogId) => {
+    try {
+      if (newComment.trim() !== '') {
+        const blogRef = doc(db, 'blogs', blogId);
+        await updateDoc(blogRef, {
+          comments: [...(blogs.find((blog) => blog.id === blogId)?.comments || []), newComment],
+        });
+
+        // Clear the comment input after successfully adding a comment
+        setNewComment('');
+      }
+    } catch (error) {
+      console.error('Error adding comment:', error);
+    }
+  };
+
 
   const renderBlogItem = ({ item }) => (
     <View style={styles.blogItem}>
+      <Text>{item.userName}'s Blog</Text>
       <Text style={styles.blogTitle}>{item.title}</Text>
       <Text style={styles.blogContent}>{item.content}</Text>
       <View style={styles.interactionContainer}>
-        <TouchableOpacity onPress={() => navigation.navigate('Comments', { blogId: item.id })}>
-          <Text>Comments: {item.comments}</Text>
+        <Text>{item.userName}'s Blog</Text>
+        <Text>Comments: {item.comments}</Text>
+        <Text>Likes: {item.likes}</Text>
+        <Text>Dislikes: {item.dislikes}</Text>
+        {/* Like button */}
+        <TouchableOpacity onPress={() => handleLike(item.id)} style={item.userLiked ? styles.likedButton : styles.interactionButton}>
+          <Icon name="thumb-up-outline" color="#777777" size={20} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleLike(item.id)}>
-          <Text>Likes: {item.likes}</Text>
+        {/* Dislike button */}
+        <TouchableOpacity onPress={() => handleDislike(item.id)} style={item.userDisliked ? styles.dislikedButton : styles.interactionButton}>
+          <Icon name="thumb-down-outline" color="#777777" size={20} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleDislike(item.id)}>
-          <Text>Dislikes: {item.dislikes}</Text>
+      </View>
+      {/* Comment section */}
+      <View style={styles.commentSection}>
+        <TextInput
+          style={styles.commentInput}
+          placeholder="Add a comment..."
+          value={newComment}
+          onChangeText={(text) => setNewComment(text)}
+        />
+        <TouchableOpacity onPress={() => handleAddComment(item.id)}>
+          <Text style={styles.commentButton}>Comment</Text>
         </TouchableOpacity>
+        <FlatList
+          data={item.comments}
+          keyExtractor={(comment) => comment}
+          renderItem={({ item: comment }) => (
+            <View style={styles.commentContainer}>
+              <Text style={styles.commentText}>{comment}</Text>
+            </View>
+          )}
+        />
       </View>
     </View>
   );
+  
 
   return (
-    <SafeAreaView style={styles.container}>
-    <ScrollView>
-        {/* Blog posting section */}
-      <View style={styles.blogPostSection}>
-        <TextInput
-          style={styles.input}
-          placeholder="Title of the blog..."
-          value={newBlogTitle}
-          onChangeText={(text) => setNewBlogTitle(text)}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Write your blog here..."
-          multiline
-          value={newBlogContent}
-          onChangeText={(text) => setNewBlogContent(text)}
-        />
-        <TouchableOpacity style={styles.addButton} onPress={handlePostBlog}>
-          <Text style={styles.buttonText}>Add Blog</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Display user's blogs */}
-      <FlatList
-        data={blogs}
-        keyExtractor={(item) => item.id}
-        renderItem={renderBlogItem}
-        style={styles.blogList}
-      />
-      </ScrollView>
-    </SafeAreaView>
+    <View style={styles.container}>
+      {/* Display past blogs */}
+      <FlatList data={blogs} keyExtractor={(item) => item.id} renderItem={renderBlogItem} />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  userInfoSection: {
-    paddingHorizontal: 30,
-    marginBottom: 25,
-  },
-  blogPostSection: {
     padding: 16,
-  },
-  title: {
-    fontSize: 29,
-    fontWeight: 'bold',
-  },
-  caption: {
-    fontSize: 15,
-    lineHeight: 14,
-    fontWeight: '500',
-  },
-  row: {
-    flexDirection: 'row',
-    marginBottom: 10,
-  },
-  infoBoxWrapper: {
-    borderBottomColor: '#dddddd',
-    borderBottomWidth: 1,
-    borderTopColor: '#dddddd',
-    borderTopWidth: 1,
-    flexDirection: 'row',
-    height: 50,
-    alignContent: 'center',
-  },
-  infoBox: {
-    width: '100%',
-    alignItems: 'center',
     justifyContent: 'center',
-    fontWeight: 'bold',
-    fontSize: 50,
-    color: '#dddddd',
   },
-  blogList: {
-    flex: 1,
+  input: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    marginBottom: 16,
+    padding: 8,
+  },
+  addButton: {
+    backgroundColor: '#32cd32',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
   blogItem: {
     marginBottom: 16,
@@ -209,220 +239,40 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 8,
   },
-  input: {
+  commentSection: {
+    marginTop: 8,
+  },
+  commentInput: {
     height: 40,
     borderColor: 'gray',
     borderWidth: 1,
-    marginBottom: 16,
+    marginBottom: 8,
     padding: 8,
   },
-  addButton: {
-    backgroundColor: '#32cd32',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
+  commentButton: {
+    color: 'blue',
   },
-  buttonText: {
-    color: 'white',
-    fontWeight: 'bold',
+  commentContainer: {
+    marginTop: 8,
   },
-  menuWrapper: {
-    marginTop: 10,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-  },
-  menuItemText: {
+  commentText: {
     color: '#777777',
-    marginLeft: 20,
-    fontWeight: '600',
-    fontSize: 16,
-    lineHeight: 26,
   },
+  likedButton: {
+    backgroundColor: '#32cd32', // Green color for liked button
+    padding: 8,
+    borderRadius: 4,
+  },
+  dislikedButton: {
+    backgroundColor: '#ff0000', // Red color for disliked button
+    padding: 8,
+    borderRadius: 4,
+  },
+  interactionButton: {
+    padding: 8,
+    borderRadius: 4,
+  },
+  
 });
 
 export default PostScreen;
-
-
-
-
-
-// import React, { useState, useEffect } from 'react';
-// import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
-// import { collection, addDoc, getDocs, updateDoc, doc } from 'firebase/firestore';
-// import { auth, db } from './firebaseConfig';
-
-// const PostScreen = ({ navigation }) => {
-//   const [blogs, setBlogs] = useState([]);
-//   const [newBlogTitle, setNewBlogTitle] = useState('');
-//   const [newBlogContent, setNewBlogContent] = useState('');
-
-//   // useEffect(() => {
-//   //   const fetchBlogs = async () => {
-//   //     try {
-//   //       const blogsRef = collection(db, 'blogs');
-//   //       const querySnapshot = await getDocs(blogsRef);
-//   //       const blogsData = [];
-
-//   //       querySnapshot.forEach((doc) => {
-//   //         const blogData = doc.data();
-//   //         blogData.id = doc.id;
-//   //         blogsData.push(blogData);
-//   //       });
-
-//   //       setBlogs(blogsData);
-//   //     } catch (error) {
-//   //       console.error('Error fetching blogs:', error);
-//   //     }
-//   //   };
-
-//   //   fetchBlogs();
-//   // }, []);
-
-//   const handleAddBlog = async () => {
-//     try {
-//       if (newBlogTitle.trim().length === 0 || newBlogContent.trim().length === 0) {
-//         alert('Please provide both title and content for the blog.');
-//         return;
-//       }
-  
-//       const user = auth.currentUser;
-  
-//       if (!user) {
-//         // Handle the case where the user is not authenticated.
-//         alert('You need to be logged in to post a blog.');
-//         return;
-//       }
-  
-//       const newBlogData = {
-//         title: newBlogTitle,
-//         content: newBlogContent,
-//         comments: [],
-//         likes: 0,
-//         dislikes: 0,
-//         username:userName,
-//       };
-  
-//       const docRef = await addDoc(collection(db, 'blogs'), newBlogData);
-//       setBlogs([...blogs, { ...newBlogData, id: docRef.id }]);
-//       setNewBlogTitle('');
-//       setNewBlogContent('');
-//     } catch (error) {
-//       console.error('Error adding blog:', error);
-//     }
-//   };
-  
-//   const handleLike = async (blogId) => {
-//     try {
-//       const blogRef = doc(db, 'blogs', blogId);
-//       await updateDoc(blogRef, { likes: blogs.find((blog) => blog.id === blogId).likes + 1 });
-//     } catch (error) {
-//       console.error('Error updating likes:', error);
-//     }
-//   };
-
-//   const handleDislike = async (blogId) => {
-//     try {
-//       const blogRef = doc(db, 'blogs', blogId);
-//       await updateDoc(blogRef, { dislikes: blogs.find((blog) => blog.id === blogId).dislikes + 1 });
-//     } catch (error) {
-//       console.error('Error updating dislikes:', error);
-//     }
-//   };
-
-//   const renderBlogItem = ({ item }) => (
-//     <View style={styles.blogItem}>
-//       <Text style={styles.blogTitle}>{item.title}</Text>
-//       <Text style={styles.blogContent}>{item.content}</Text>
-//       <View style={styles.interactionContainer}>
-//         <TouchableOpacity onPress={() => navigation.navigate('Comments', { blogId: item.id })}>
-//           <Text>Comments: {item.comments.length}</Text>
-//         </TouchableOpacity>
-//         <TouchableOpacity onPress={() => handleLike(item.id)}>
-//           <Text>Likes: {item.likes}</Text>
-//         </TouchableOpacity>
-//         <TouchableOpacity onPress={() => handleDislike(item.id)}>
-//           <Text>Dislikes: {item.dislikes}</Text>
-//         </TouchableOpacity>
-//       </View>
-//     </View>
-//   );
-
-//   return (
-//     <View style={styles.container}>
-//       <TextInput
-//         style={styles.input}
-//         placeholder="Title of the blog..."
-//         value={newBlogTitle}
-//         onChangeText={(text) => setNewBlogTitle(text)}
-//       />
-//       <TextInput
-//         style={styles.input}
-//         placeholder="Write your blog here..."
-//         multiline
-//         value={newBlogContent}
-//         onChangeText={(text) => setNewBlogContent(text)}
-//       />
-//       <TouchableOpacity style={styles.addButton} onPress={handleAddBlog}>
-//         <Text style={styles.buttonText}>Add Blog</Text>
-//       </TouchableOpacity>
-//       <FlatList
-//         data={blogs}
-//         keyExtractor={(item) => item.id}
-//         renderItem={renderBlogItem}
-//         style={styles.blogList}
-//       />
-//     </View>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     padding: 16,
-//   },
-//   input: {
-//     height: 40,
-//     borderColor: 'gray',
-//     borderWidth: 1,
-//     marginBottom: 16,
-//     padding: 8,
-//   },
-//   addButton: {
-//     backgroundColor: '#32cd32',
-//     padding: 12,
-//     borderRadius: 8,
-//     alignItems: 'center',
-//   },
-//   buttonText: {
-//     color: 'white',
-//     fontWeight: 'bold',
-//   },
-//   blogList: {
-//     flex: 1,
-//   },
-//   blogItem: {
-//     marginBottom: 16,
-//     padding: 16,
-//     borderWidth: 1,
-//     borderColor: '#ddd',
-//     borderRadius: 8,
-//   },
-//   blogTitle: {
-//     fontSize: 18,
-//     fontWeight: 'bold',
-//     marginBottom: 8,
-//   },
-//   blogContent: {
-//     marginBottom: 8,
-//   },
-//   interactionContainer: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     marginTop: 8,
-//   },
-// });
-
-// export default PostScreen;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, FlatList ,ScrollView} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView,Alert, FlatList ,ScrollView} from 'react-native';
 import { Avatar, Title, Caption, Text as PaperText, TouchableRipple,IconButton} from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -17,7 +17,29 @@ const ProfileScreen = () => {
   const [newBlogContent, setNewBlogContent] = useState('');
   const [newComment, setNewComment] = useState('');
 
-  
+  //check if log in
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        // User is signed in
+        getUserData();
+        fetchBlogs();
+      } else {
+        // No user is signed in, navigate to the login screen or show a message
+        Alert('')
+        navigation.replace('Login');
+        
+        // You can replace it with your login screen route
+      }
+    });
+
+    return () => unsubscribe();
+  }, [navigation]);
+
+
+
+
+
   //fetching user data
   const getUserData = async () => {
     try {
@@ -93,33 +115,33 @@ const ProfileScreen = () => {
   };
 
 
-  //post new blog
-  const handlePostBlog = async () => {
-    try {
-      const date = new Date().toISOString();
-      const blogData = {
-        title: newBlogTitle,
-        content: newBlogContent,
-        comments: [],
-        likes: 0,
-        dislikes: 0,
-        userId: userData?.userRef,
-        userName: userData?.userName,
-        date: date,
-      };
-
-      const blogsRef = collection(db, 'blogs');
-      await addDoc(blogsRef, blogData);
-
-      // You may want to provide user feedback here (e.g., show a success message)
-      console.log('Blog posted successfully!');
-
-      // Refetch blogs to update the list
-      fetchBlogs();
-    } catch (error) {
-      console.error('Error posting blog:', error);
-    }
-  };
+    //post new blog
+    const handlePostBlog = async () => {
+      try {
+        const date = new Date().toISOString();
+        const blogData = {
+          title: newBlogTitle,
+          content: newBlogContent,
+          comments: [],
+          likes: 0,
+          dislikes: 0,
+          userId: userData?.userRef,
+          userName: userData?.userName,
+          date: date,
+        };
+  
+        const blogsRef = collection(db, 'blogs');
+        const newBlogDoc = await addDoc(blogsRef, blogData);
+  
+        console.log('Blog posted successfully!');
+  
+        // Provide user feedback or navigate back to the profile screen
+        Alert.alert('Success', 'Blog posted successfully', [{ text: 'OK', onPress: () => navigation.navigate('Profile') }]);
+      } catch (error) {
+        console.error('Error posting blog:', error);
+        Alert.alert('Error', 'Failed to post blog. Please try again.');
+      }
+    };
 
   const handleLike = async (blogId) => {
     try {
@@ -206,100 +228,122 @@ const ProfileScreen = () => {
 
   
   
-
   return (
     <SafeAreaView style={styles.container}>
-    <ScrollView>
-      <View style={styles.userInfoSection}>
-        <View style={{ flexDirection: 'row', marginTop: 15 }}>
-          <Avatar.Image source={{ uri: userData?.userProfilePic }} size={80} />
-          <View style={{ marginLeft: 20 }}>
-            <Title style={[styles.title, { marginTop: 15, marginBottom: 5 }]}>{userData?.userName}</Title>
-            <Caption style={styles.caption}>@{userData?.userName}</Caption>
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.userInfoSection}>
-        <View style={styles.row}>
-          <Icon name="account" color="#777777" size={20} />
-          <Text style={{ marginLeft: 20, color: '#777777', fontSize: 16 }}>{userData?.userName}</Text>
-        </View>
-        <View style={styles.row}>
-          <Icon name="book" color="#777777" size={20} />
-          <Text style={{ marginLeft: 20, color: '#777777', fontSize: 16 }}>{userData?.semester}</Text>
-        </View>
-        <View style={styles.row}>
-          <Icon name="email" color="#777777" size={20} />
-          <Text style={{ marginLeft: 20, color: '#777777', fontSize: 16 }}>{userData?.email}</Text>
-        </View>
-      </View>
-
-      <View style={[styles.infoBox]}>
-        <Title>Additional Information</Title>
-        {/* Display additional information */}
-      </View>
-
-      <View style={styles.menuWrapper}>
-        {/* Existing menu items */}
-        <TouchableRipple onPress={() => navigation.navigate('HomePage')}>
-          <View style={styles.menuItem}>
-            <Icon name="book-arrow-right" color="#FF6347" size={25} />
-            <Text style={styles.menuItemText}>My Books(to give rent)</Text>
-          </View>
-        </TouchableRipple>
-
-        <TouchableRipple onPress={() => {}}>
-          <View style={styles.menuItem}>
-            <Icon name="book-arrow-left-outline" color="#FF6347" size={25} />
-            <Text style={styles.menuItemText}>Borrowed</Text>
-          </View>
-        </TouchableRipple>
-
-        <TouchableRipple onPress={() => navigation.navigate('ProfileUpdate')}>
-          <View style={styles.menuItem}>
-            <Icon name="cog-outline" color="#FF6347" size={25} />
-            <Text style={styles.menuItemText}>Edit Profile</Text>
-          </View>
-        </TouchableRipple>
-
-        <TouchableRipple onPress={handleLogout}>
-          <View style={styles.menuItem}>
-            <Icon name="logout" color="#FF6347" size={25} />
-            <Text style={styles.menuItemText}>Logout</Text>
-          </View>
-        </TouchableRipple>
-
-        {/* Display user's blogs */}
-        {auth.currentUser && (
+      <ScrollView>
+        {userData && (
           <View>
-            {/* Blog posting section */}
-            <View style={styles.blogPostSection}>
-              <TextInput
-                style={styles.input}
-                placeholder="Title of the blog..."
-                value={newBlogTitle}
-                onChangeText={(text) => setNewBlogTitle(text)}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Write your blog here..."
-                multiline
-                value={newBlogContent}
-                onChangeText={(text) => setNewBlogContent(text)}
-              />
-              <TouchableOpacity style={styles.addButton} onPress={handlePostBlog}>
-                <Text style={styles.buttonText}>Add Blog</Text>
-              </TouchableOpacity>
+            <View style={styles.userInfoSection}>
+              <View style={{ flexDirection: 'row', marginTop: 15 }}>
+                <Avatar.Image source={{ uri: userData?.userProfilePic }} size={80} />
+                <View style={{ marginLeft: 20 }}>
+                  <Title style={[styles.title, { marginTop: 15, marginBottom: 5 }]}>{userData?.userName}</Title>
+                  <Caption style={styles.caption}>@{userData?.userName}</Caption>
+                </View>
+              </View>
             </View>
+  
+            <View style={styles.userInfoSection}>
+              <View style={styles.row}>
+                <Icon name="account" color="#777777" size={20} />
+                <Text style={{ marginLeft: 20, color: '#777777', fontSize: 16 }}>{userData?.userName}</Text>
+              </View>
+              <View style={styles.row}>
+                <Icon name="book" color="#777777" size={20} />
+                <Text style={{ marginLeft: 20, color: '#777777', fontSize: 16 }}>{userData?.semester}</Text>
+              </View>
+              <View style={styles.row}>
+                <Icon name="email" color="#777777" size={20} />
+                <Text style={{ marginLeft: 20, color: '#777777', fontSize: 16 }}>{userData?.email}</Text>
+              </View>
+            </View>
+  
+            <View style={styles.infoBox}>
+              <Title>Additional Information</Title>
+              {/* Display additional information */}
+            </View>
+  
+            <View style={styles.menuWrapper}>
+              {/* Existing menu items */}
+              <TouchableRipple onPress={() => navigation.navigate('HomePage')}>
+                <View style={styles.menuItem}>
+                  <Icon name="book-arrow-right" color="#FF6347" size={25} />
+                  <Text style={styles.menuItemText}>My Books(to give rent)</Text>
+                </View>
+              </TouchableRipple>
+  
+              <TouchableRipple onPress={() => {}}>
+                <View style={styles.menuItem}>
+                  <Icon name="book-arrow-left-outline" color="#FF6347" size={25} />
+                  <Text style={styles.menuItemText}>Borrowed</Text>
+                </View>
+              </TouchableRipple>
+  
+              <TouchableRipple onPress={() => navigation.navigate('ProfileUpdate')}>
+                <View style={styles.menuItem}>
+                  <Icon name="cog-outline" color="#FF6347" size={25} />
+                  <Text style={styles.menuItemText}>Edit Profile</Text>
+                </View>
+              </TouchableRipple>
+  
+              <TouchableRipple onPress={handleLogout}>
+                <View style={styles.menuItem}>
+                  <Icon name="logout" color="#FF6347" size={25} />
+                  <Text style={styles.menuItemText}>Logout</Text>
+                </View>
+              </TouchableRipple>
 
-            <FlatList data={blogs} keyExtractor={(item) => item.id} renderItem={renderBlogItem} style={styles.blogList} />
+              {/* Link to PostScreen */}
+              <TouchableOpacity onPress={() => navigation.navigate('PostScreen')}>
+                <View style={styles.menuItem}>
+                  <Icon name="pencil" color="#FF6347" size={25} />
+                  <Text style={styles.menuItemText}>See B</Text>
+                </View>
+              </TouchableOpacity>
+  
+              {/* Display user's blogs */}
+              {auth.currentUser && (
+                <View>
+                  {/* Blog posting section */}
+                  <View style={styles.blogPostSection}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Title of the blog..."
+                      value={newBlogTitle}
+                      onChangeText={(text) => setNewBlogTitle(text)}
+                    />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Write your blog here..."
+                      multiline
+                      value={newBlogContent}
+                      onChangeText={(text) => setNewBlogContent(text)}
+                    />
+                    <TouchableOpacity style={styles.addButton} onPress={handlePostBlog}>
+                      <Text style={styles.buttonText}>Add Blog</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+            </View>
           </View>
         )}
-      </View>
+  
+        {!userData && (
+          <View style={styles.loginMessageContainer}>
+            <Text style={styles.loginMessageText}>
+              Please log in to access your profile
+            </Text>
+            <TouchableOpacity onPress={() => navigation.replace('Login')}>
+              <Text style={styles.loginLinkText}>Log In</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
+  
+            
 };
 
 const styles = StyleSheet.create({
@@ -397,6 +441,22 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 16,
     lineHeight: 26,
+  },
+  loginMessageContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  loginMessageText: {
+    fontSize: 18,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  loginLinkText: {
+    fontSize: 18,
+    color: 'blue',
+    textDecorationLine: 'underline',
   },
 });
 
