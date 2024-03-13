@@ -1,23 +1,30 @@
 // PostScreen.js
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, FlatList } from 'react-native';
-import { collection, addDoc, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Alert } from 'react-native';
+import { collection, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { auth, db } from './firebaseConfig';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const PostScreen = ({ navigation }) => {
+  const [user, setUser] = useState(null); // User state to store the authenticated user
   const [newBlogTitle, setNewBlogTitle] = useState('');
   const [newBlogContent, setNewBlogContent] = useState('');
   const [blogs, setBlogs] = useState([]);
   const [newComment, setNewComment] = useState('');
 
-  //for like and dislike buttons
-  const [likedBlogs, setLikedBlogs] = useState([]);
-  const [dislikedBlogs, setDislikedBlogs] = useState([]);
-
   useEffect(() => {
+    // Check if a user is logged in
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+      if (user) {
+        setUser(user);
+      } else {
+        // If user is not logged in, navigate to the login screen
+        navigation.navigate('Login'); // Replace 'Login' with the name of your login screen
+      }
+    });
+
     // Real-time update for blogs
-    const unsubscribe = onSnapshot(collection(db, 'blogs'), (snapshot) => {
+    const unsubscribeBlogs = onSnapshot(collection(db, 'blogs'), (snapshot) => {
       const blogsData = [];
       snapshot.forEach((doc) => {
         const blogData = doc.data();
@@ -27,112 +34,88 @@ const PostScreen = ({ navigation }) => {
       setBlogs(blogsData);
     });
 
-    // Cleanup the listener when the component is unmounted
-    return () => unsubscribe();
-  }, []);
-  const handleLike = async (blogId) => {
+    // Cleanup the listeners when the component is unmounted
+    return () => {
+      unsubscribeAuth();
+      unsubscribeBlogs();
+    };
+  }, [navigation]);
+
+  const handleLikeDislike = async (blogId, reactionType) => {
     try {
       const blogRef = doc(db, 'blogs', blogId);
-      const currentBlog = blogs.find((blog) => blog.id === blogId);
+      const currentBlogIndex = blogs.findIndex((blog) => blog.id === blogId);
+      const currentBlog = blogs[currentBlogIndex];
 
-      if (!currentBlog.userLiked && !currentBlog.userDisliked) {
-        const newLikes = currentBlog.likes + 1;
-        await updateDoc(blogRef, { likes: newLikes });
+      if (!currentBlog.userReacted) {
+        // User has not reacted yet
+        const newReactionCount = currentBlog[reactionType] + 1;
+        await updateDoc(blogRef, {
+          [reactionType]: newReactionCount,
+          userReacted: reactionType,
+        });
 
-        setBlogs((prevBlogs) =>
-          prevBlogs.map((blog) =>
-            blog.id === blogId
-              ? { ...blog, likes: newLikes, userLiked: true, userDisliked: false }
-              : blog
-          )
-        );
-      } else if (currentBlog.userLiked) {
-        // User already liked, toggle to neutral
-        const newLikes = currentBlog.likes - 1;
-        await updateDoc(blogRef, { likes: newLikes });
+        setBlogs((prevBlogs) => {
+          const updatedBlogs = [...prevBlogs];
+          updatedBlogs[currentBlogIndex] = {
+            ...currentBlog,
+            [reactionType]: newReactionCount,
+            userReacted: reactionType,
+          };
+          return updatedBlogs;
+        });
+      } else if (currentBlog.userReacted === reactionType) {
+        // User is toggling the reaction
+        const newReactionCount = currentBlog[reactionType] - 1;
+        await updateDoc(blogRef, {
+          [reactionType]: newReactionCount,
+          userReacted: null,
+        });
 
-        setBlogs((prevBlogs) =>
-          prevBlogs.map((blog) =>
-            blog.id === blogId
-              ? { ...blog, likes: newLikes, userLiked: false, userDisliked: false }
-              : blog
-          )
-        );
-      } else if (currentBlog.userDisliked) {
-        // User disliked, toggle to like
-        const newLikes = currentBlog.likes + 1;
-        const newDislikes = currentBlog.dislikes - 1;
+        setBlogs((prevBlogs) => {
+          const updatedBlogs = [...prevBlogs];
+          updatedBlogs[currentBlogIndex] = {
+            ...currentBlog,
+            [reactionType]: newReactionCount,
+            userReacted: null,
+          };
+          return updatedBlogs;
+        });
+      } else {
+        // User is changing reaction
+        const newReactionCount = currentBlog[reactionType] + 1;
+        const oldReactionCount = currentBlog[currentBlog.userReacted] - 1;
+        await updateDoc(blogRef, {
+          [reactionType]: newReactionCount,
+          [currentBlog.userReacted]: oldReactionCount,
+          userReacted: reactionType,
+        });
 
-        await updateDoc(blogRef, { likes: newLikes, dislikes: newDislikes });
-
-        setBlogs((prevBlogs) =>
-          prevBlogs.map((blog) =>
-            blog.id === blogId
-              ? { ...blog, likes: newLikes, dislikes: newDislikes, userLiked: true, userDisliked: false }
-              : blog
-          )
-        );
+        setBlogs((prevBlogs) => {
+          const updatedBlogs = [...prevBlogs];
+          updatedBlogs[currentBlogIndex] = {
+            ...currentBlog,
+            [reactionType]: newReactionCount,
+            [currentBlog.userReacted]: oldReactionCount,
+            userReacted: reactionType,
+          };
+          return updatedBlogs;
+        });
       }
     } catch (error) {
-      console.error('Error updating likes:', error);
+      console.error(`Error updating ${reactionType}:`, error);
     }
   };
 
-  const handleDislike = async (blogId) => {
-    try {
-      const blogRef = doc(db, 'blogs', blogId);
-      const currentBlog = blogs.find((blog) => blog.id === blogId);
-
-      if (!currentBlog.userLiked && !currentBlog.userDisliked) {
-        const newDislikes = currentBlog.dislikes + 1;
-        await updateDoc(blogRef, { dislikes: newDislikes });
-
-        setBlogs((prevBlogs) =>
-          prevBlogs.map((blog) =>
-            blog.id === blogId
-              ? { ...blog, dislikes: newDislikes, userLiked: false, userDisliked: true }
-              : blog
-          )
-        );
-      } else if (currentBlog.userDisliked) {
-        // User already disliked, toggle to neutral
-        const newDislikes = currentBlog.dislikes - 1;
-        await updateDoc(blogRef, { dislikes: newDislikes });
-
-        setBlogs((prevBlogs) =>
-          prevBlogs.map((blog) =>
-            blog.id === blogId
-              ? { ...blog, dislikes: newDislikes, userLiked: false, userDisliked: false }
-              : blog
-          )
-        );
-      } else if (currentBlog.userLiked) {
-        // User liked, toggle to dislike
-        const newLikes = currentBlog.likes - 1;
-        const newDislikes = currentBlog.dislikes + 1;
-
-        await updateDoc(blogRef, { likes: newLikes, dislikes: newDislikes });
-
-        setBlogs((prevBlogs) =>
-          prevBlogs.map((blog) =>
-            blog.id === blogId
-              ? { ...blog, likes: newLikes, dislikes: newDislikes, userLiked: false, userDisliked: true }
-              : blog
-          )
-        );
-      }
-    } catch (error) {
-      console.error('Error updating dislikes:', error);
-    }
-  };
-  
- 
   const handleAddComment = async (blogId) => {
     try {
       if (newComment.trim() !== '') {
         const blogRef = doc(db, 'blogs', blogId);
         await updateDoc(blogRef, {
-          comments: [...(blogs.find((blog) => blog.id === blogId)?.comments || []), newComment],
+          comments: [
+            ...(blogs.find((blog) => blog.id === blogId)?.comments || []),
+            { userName: user.displayName, text: newComment }, // Include the userName in the comment
+          ],
         });
 
         // Clear the comment input after successfully adding a comment
@@ -143,24 +126,27 @@ const PostScreen = ({ navigation }) => {
     }
   };
 
-
   const renderBlogItem = ({ item }) => (
     <View style={styles.blogItem}>
       <Text>{item.userName}'s Blog</Text>
       <Text style={styles.blogTitle}>{item.title}</Text>
       <Text style={styles.blogContent}>{item.content}</Text>
       <View style={styles.interactionContainer}>
-        <Text>{item.userName}'s Blog</Text>
-        <Text>Comments: {item.comments}</Text>
-        <Text>Likes: {item.likes}</Text>
-        <Text>Dislikes: {item.dislikes}</Text>
+        <Text>Comments: {item.comments.length}</Text>
+
         {/* Like button */}
-        <TouchableOpacity onPress={() => handleLike(item.id)} style={item.userLiked ? styles.likedButton : styles.interactionButton}>
-          <Icon name="thumb-up-outline" color="#777777" size={20} />
+        <TouchableOpacity
+          onPress={() => handleLikeDislike(item.id, 'likes')}
+          style={item.userReacted === 'likes' ? styles.likedButton : styles.interactionButton}>
+          <Icon name="thumb-up-outline" color={item.userReacted === 'likes' ? '#32cd32' : '#777777'} size={20} />
+          <Text>{item.likes}</Text>
         </TouchableOpacity>
         {/* Dislike button */}
-        <TouchableOpacity onPress={() => handleDislike(item.id)} style={item.userDisliked ? styles.dislikedButton : styles.interactionButton}>
-          <Icon name="thumb-down-outline" color="#777777" size={20} />
+        <TouchableOpacity
+          onPress={() => handleLikeDislike(item.id, 'dislikes')}
+          style={item.userReacted === 'dislikes' ? styles.dislikedButton : styles.interactionButton}>
+          <Icon name="thumb-down-outline" color={item.userReacted === 'dislikes' ? '#ff0000' : '#777777'} size={20} />
+          <Text>{item.dislikes}</Text>
         </TouchableOpacity>
       </View>
       {/* Comment section */}
@@ -176,17 +162,16 @@ const PostScreen = ({ navigation }) => {
         </TouchableOpacity>
         <FlatList
           data={item.comments}
-          keyExtractor={(comment) => comment}
+          keyExtractor={(comment) => comment?.id?.toString()} // Assuming each comment has a unique ID
           renderItem={({ item: comment }) => (
             <View style={styles.commentContainer}>
-              <Text style={styles.commentText}>{comment}</Text>
+              <Text style={styles.commentText}>{comment?.userName}: {comment?.text}</Text>
             </View>
           )}
         />
       </View>
     </View>
   );
-  
 
   return (
     <View style={styles.container}>
@@ -272,7 +257,6 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 4,
   },
-  
 });
 
 export default PostScreen;
