@@ -12,8 +12,7 @@ const DrawerList = [
   {icon: 'login', label: 'Login', navigateTo: 'Login'},
   {icon: 'open-in-new', label: 'Signup', navigateTo: 'Signup'},
   {icon: 'account-circle', label: 'Profile', navigateTo: 'ProfileScreen'},
-  {icon: 'star', label: 'Rate This App', navigateTo: 'RatingScreen'},
-  {icon: 'star', label: 'Post', navigateTo: 'PostScreen'},
+ 
 ];
 const DrawerLayout = ({icon, label, navigateTo}) => {
   const navigation = useNavigation();

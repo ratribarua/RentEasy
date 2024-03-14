@@ -175,41 +175,6 @@ const ProfileScreen = () => {
         Alert.alert('Error', 'Failed to post blog. Please try again.');
       }
     };
-
-  //   const [rating, setRating] = useState(0);
-
-  // useEffect(() => {
-  //   // Fetch user rating on component mount
-  //   fetchRating();
-  // }, []);
-
-  // // Fetch user rating
-  // const fetchRating = async () => {
-  //   try {
-  //     const ratingsRef = doc(db, 'ratings', userData?.userRef);
-  //     const ratingDoc = await getDocs(ratingsRef);
-  //     if (ratingDoc.exists()) {
-  //       const userRating = ratingDoc.data().rating;
-  //       setRating(userRating);
-  //     }
-  //   } catch (error) {
-  //     console.error('Error fetching user rating:', error);
-  //   }
-  // };
-
-  // // Handle user rating
-  // const handleRating = async () => {
-  //   try {
-  //     const ratingsRef = doc(db, 'ratings', userData?.userRef);
-  //     await updateDoc(ratingsRef, { rating });
-
-  //     // Provide user feedback or perform other actions
-  //     Alert.alert('Success', 'Rating updated successfully');
-  //   } catch (error) {
-  //     console.error('Error updating user rating:', error);
-  //     Alert.alert('Error', 'Failed to update rating. Please try again.');
-  //   }
-  // };
   
   
   return (
@@ -240,11 +205,6 @@ const ProfileScreen = () => {
                 <Icon name="email" color="#777777" size={20} />
                 <Text style={{ marginLeft: 20, color: '#777777', fontSize: 16 }}>{userData?.email}</Text>
               </View>
-            </View>
-  
-            <View style={styles.infoBox}>
-              <Title>Additional Information</Title>
-              {/* Display additional information */}
             </View>
   
             <View style={styles.menuWrapper}>
@@ -278,7 +238,7 @@ const ProfileScreen = () => {
               </TouchableRipple>
 
               {/* Link to PostScreen */}
-              <TouchableOpacity onPress={() => navigation.navigate('PostScreen')}>
+              <TouchableOpacity onPress={() => navigation.navigate('PostScreen', { userId: userData?.userRef, userName: userData?.userName })}>
                 <View style={styles.menuItem}>
                   <Icon name="pencil" color="#FF6347" size={25} />
                   <Text style={styles.menuItemText}>See Blog</Text>

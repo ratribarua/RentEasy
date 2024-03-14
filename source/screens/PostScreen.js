@@ -41,6 +41,8 @@ const PostScreen = ({ navigation }) => {
     };
   }, [navigation]);
 
+  const { userId, userName } = route.params;
+
   const handleLikeDislike = async (blogId, reactionType) => {
     try {
       const blogRef = doc(db, 'blogs', blogId);
@@ -114,7 +116,7 @@ const PostScreen = ({ navigation }) => {
         await updateDoc(blogRef, {
           comments: [
             ...(blogs.find((blog) => blog.id === blogId)?.comments || []),
-            { userName: user.displayName, text: newComment }, // Include the userName in the comment
+            { userName: userName, userId: userId, text: newComment }, // Include the userName in the comment
           ],
         });
 
@@ -157,9 +159,10 @@ const PostScreen = ({ navigation }) => {
           value={newComment}
           onChangeText={(text) => setNewComment(text)}
         />
-        <TouchableOpacity onPress={() => handleAddComment(item.id)}>
-          <Text style={styles.commentButton}>Comment</Text>
-        </TouchableOpacity>
+<TouchableOpacity onPress={() => handleAddComment(item.id, userData?.userName, userData?.userRef)}>
+  <Text style={styles.commentButton}>Comment</Text>
+</TouchableOpacity>
+
         <FlatList
           data={item.comments}
           keyExtractor={(comment) => comment?.id?.toString()} // Assuming each comment has a unique ID
