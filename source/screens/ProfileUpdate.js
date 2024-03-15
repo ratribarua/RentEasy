@@ -68,31 +68,32 @@ const  ProfileUpdate = () => {
     const storageUrl = 'renteasyproject.appspot.com';
     try {
       const userDocRef = doc(db, 'users', auth.currentUser.user_id);
-  
+    
       // Update user name and semester
       await updateDoc(userDocRef, { userName: newName, semester: newSemester });
-  
+    
       // Update profile picture if a new image is selected
       if (newImageUri) {
         setLoading(true);
         const fileName = `images/${auth.currentUser.user_id}_${Date.now()}`;
-  
+    
         const storageRef = storage.ref();
         const imageRef = storageRef.child(fileName);
-  
+    
         try {
           const response = await imageRef.put(await fetch(newImageUri).then((response) => response.blob()));
           const downloadURL = await response.ref.getDownloadURL();
-  
+    
           // Update the user document with the new image URL
           await updateDoc(userDocRef, { dp_url: downloadURL });
         } catch (error) {
           console.error('Error uploading image:', error);
           Alert.alert('Error', 'Failed to upload image. Please try again.');
-          setLoading(false); // Make sure to set loading to false in case of an error
+        } finally {
+          setLoading(false); // Ensure loading state is set to false after the operation
         }
       }
-  
+    
       // Refresh user data after the update
       const updatedUserData = {
         userName: newName,
@@ -100,15 +101,16 @@ const  ProfileUpdate = () => {
         dp_url: newImageUri || userData.dp_url, // Use newImageUri when available, otherwise use userData.dp_url
       };
       setUserData(updatedUserData);
-  
+    
       Alert.alert('Profile Updated', 'Your profile has been successfully updated!');
-      setLoading(false); // Make sure to set loading to false after the update is complete
     } catch (error) {
       console.error('Error updating profile:', error);
       Alert.alert('Error', 'Failed to update profile. Please try again.');
-      setLoading(false); // Make sure to set loading to false in case of an error
+    } finally {
+      setLoading(false); // Ensure loading state is set to false after the operation
     }
   };
+  
   
 
   return (

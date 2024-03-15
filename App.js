@@ -14,6 +14,7 @@ import RatingScreen from './source/screens/RatingScreen';
 import ProfileScreen from './source/screens/ProfileScreen';
 import PostScreen from './source/screens/PostScreen';
 import ProfileUpdate from './source/screens/ProfileUpdate';
+import Im from './source/screens/Im';
 
 
 
@@ -51,7 +52,7 @@ const StackNav =() =>{
       <Stack.Screen name="RatingScreen" component={RatingScreen} />
       <Stack.Screen name="PostScreen" component={PostScreen} />
       <Stack.Screen name="ProfileUpdate" component={ProfileUpdate} />
-      
+      <Stack.Screen name="okm" component={Im} />
     </Stack.Navigator>
   )
 }

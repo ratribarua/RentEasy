@@ -41,7 +41,7 @@ const PostScreen = ({ navigation }) => {
     };
   }, [navigation]);
 
-  const { userId, userName } = route.params;
+  //const { userId, userName } = route.params;
 
   const handleLikeDislike = async (blogId, reactionType) => {
     try {

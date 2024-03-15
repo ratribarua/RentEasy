@@ -12,6 +12,7 @@ const DrawerList = [
   {icon: 'login', label: 'Login', navigateTo: 'Login'},
   {icon: 'open-in-new', label: 'Signup', navigateTo: 'Signup'},
   {icon: 'account-circle', label: 'Profile', navigateTo: 'ProfileScreen'},
+  {icon: 'account-circle', label: 'im', navigateTo: 'Im'},
  
 ];
 const DrawerLayout = ({icon, label, navigateTo}) => {
