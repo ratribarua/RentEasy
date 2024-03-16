@@ -49,6 +49,20 @@ const ProfileScreen = () => {
     setRatingModalVisible(false);
   };
   
+    // Function to update user data including userName
+    const updateUserData = async (newUserName) => {
+      try {
+        const usersRef = doc(db, 'users', userData.userRef);
+        await updateDoc(usersRef, { userName: newUserName });
+  
+        // Refetch user data after updating userName
+        await getUserData();
+        // Fetch blogs again to include the updated userName
+        await fetchBlogs();
+      } catch (error) {
+        console.error('Error updating user data:', error);
+      }
+    };
 
   //check if log in
   useEffect(() => {
@@ -167,6 +181,10 @@ const ProfileScreen = () => {
         const newBlogDoc = await addDoc(blogsRef, blogData);
   
         console.log('Blog posted successfully!');
+
+            // Reset input text
+        setNewBlogTitle('');
+        setNewBlogContent('');
   
         // Provide user feedback or navigate back to the profile screen
         Alert.alert('Success', 'Blog posted successfully', [{ text: 'OK', onPress: () => navigation.navigate('Profile') }]);
@@ -185,54 +203,80 @@ const ProfileScreen = () => {
             <View style={styles.userInfoSection}>
               <View style={{ flexDirection: 'row', marginTop: 15 }}>
                 <Avatar.Image source={{ uri: userData?.userProfilePic }} size={80} />
-                <View style={{ marginLeft: 20 }}>
-                  <Title style={[styles.title, { marginTop: 15, marginBottom: 5 }]}>{userData?.userName}</Title>
-                  <Caption style={styles.caption}>@{userData?.userName}</Caption>
+                <View style={{ marginLeft: 10 }}>
+                  <Title style={[styles.title, { marginTop: 15, marginBottom: 5, color:"#00008b" }]}>{userData?.userName}</Title>
                 </View>
+                {/* Star Icon */}
+                {auth.currentUser && (
+               <View style={styles.starIconContainer}>
+               <IconButton
+               icon="star"
+              color="#FFD700"
+              size={30}
+              marginLeft={20}
+              onPress={openRatingModal} // Open the rating modal on press
+            />
+          </View>
+        )}
+                {/* Rating Modal */}
+                <Modal
+          animationType="slide"
+          transparent={true}
+          visible={isRatingModalVisible}
+          onRequestClose={closeRatingModal}
+        >
+          <View style={styles.modalContainer}>
+    {userData ? (
+      <RatingScreen 
+        closeModal={closeRatingModal} 
+        userId={userData ? userData.userRef : null}
+        userName={userData ? userData.userName : null}
+      />
+    ) : (
+      <Text>Loading user data...</Text> // Provide a loading indicator or handle the case where userData is not available
+    )}
+  </View>
+        </Modal>
               </View>
             </View>
   
             <View style={styles.userInfoSection}>
               <View style={styles.row}>
-                <Icon name="account" color="#777777" size={20} />
-                <Text style={{ marginLeft: 20, color: '#777777', fontSize: 16 }}>{userData?.userName}</Text>
+                <Icon name="book" color="#6495ed" size={25} />
+                <Text style={{ marginLeft: 20, color: '#00008b', fontSize: 18 ,backgroundColor:"#dcdcdc"}}>Semester : {userData?.semester}</Text>
               </View>
               <View style={styles.row}>
-                <Icon name="book" color="#777777" size={20} />
-                <Text style={{ marginLeft: 20, color: '#777777', fontSize: 16 }}>{userData?.semester}</Text>
-              </View>
-              <View style={styles.row}>
-                <Icon name="email" color="#777777" size={20} />
-                <Text style={{ marginLeft: 20, color: '#777777', fontSize: 16 }}>{userData?.email}</Text>
+                <Icon name="email" color="#6495ed" size={25} />
+                <Text style={{ marginLeft: 20, color: '#00008b', fontSize: 18 ,backgroundColor:"#dcdcdc"}}>{userData?.email}</Text>
               </View>
             </View>
   
-            <View style={styles.menuWrapper}>
-              {/* Existing menu items */}
+            
+            <View>
               <TouchableRipple onPress={() => navigation.navigate('HomePage')}>
                 <View style={styles.menuItem}>
-                  <Icon name="book-arrow-right" color="#FF6347" size={25} />
+                  <Icon name="book-arrow-right" color="#4b0082" size={25} />
                   <Text style={styles.menuItemText}>My Books(to give rent)</Text>
                 </View>
               </TouchableRipple>
   
               <TouchableRipple onPress={() => {}}>
                 <View style={styles.menuItem}>
-                  <Icon name="book-arrow-left-outline" color="#FF6347" size={25} />
+                  <Icon name="book-arrow-left-outline" color="#4b0082"  size={25} />
                   <Text style={styles.menuItemText}>Borrowed</Text>
                 </View>
               </TouchableRipple>
   
               <TouchableRipple onPress={() => navigation.navigate('ProfileUpdate')}>
                 <View style={styles.menuItem}>
-                  <Icon name="cog-outline" color="#FF6347" size={25} />
+                  <Icon name="cog-outline" color="#4b0082"  size={25} />
                   <Text style={styles.menuItemText}>Edit Profile</Text>
                 </View>
               </TouchableRipple>
   
               <TouchableRipple onPress={handleLogout}>
                 <View style={styles.menuItem}>
-                  <Icon name="logout" color="#FF6347" size={25} />
+                  <Icon name="logout" color="#4b0082" size={25} />
                   <Text style={styles.menuItemText}>Logout</Text>
                 </View>
               </TouchableRipple>
@@ -240,7 +284,7 @@ const ProfileScreen = () => {
               {/* Link to PostScreen */}
               <TouchableOpacity onPress={() => navigation.navigate('PostScreen', { userId: userData?.userRef, userName: userData?.userName })}>
                 <View style={styles.menuItem}>
-                  <Icon name="pencil" color="#FF6347" size={25} />
+                  <Icon name="pencil" color="#4b0082" size={25} />
                   <Text style={styles.menuItemText}>See Blog</Text>
                 </View>
               </TouchableOpacity>
@@ -271,38 +315,6 @@ const ProfileScreen = () => {
                   </View>
                 </View>
               )}
-
-                {/* Star Icon */}
-        {auth.currentUser && (
-          <View style={styles.starIconContainer}>
-            <IconButton
-              icon="star"
-              color="#FFD700"
-              size={30}
-              onPress={openRatingModal} // Open the rating modal on press
-            />
-          </View>
-        )}
-
-        {/* Rating Modal */}
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={isRatingModalVisible}
-          onRequestClose={closeRatingModal}
-        >
-          <View style={styles.modalContainer}>
-    {userData ? (
-      <RatingScreen 
-        closeModal={closeRatingModal} 
-        userId={userData ? userData.userRef : null}
-        userName={userData ? userData.userName : null}
-      />
-    ) : (
-      <Text>Loading user data...</Text> // Provide a loading indicator or handle the case where userData is not available
-    )}
-  </View>
-        </Modal>
             </View>
           </View>
         )}
@@ -350,23 +362,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 10,
   },
-  infoBoxWrapper: {
-    borderBottomColor: '#dddddd',
-    borderBottomWidth: 1,
-    borderTopColor: '#dddddd',
-    borderTopWidth: 1,
-    flexDirection: 'row',
-    height: 50,
-    alignContent: 'center',
-  },
-  infoBox: {
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: 'bold',
-    fontSize: 50,
-    color: '#dddddd',
-  },
+
   blogList: {
     flex: 1,
   },
@@ -407,12 +403,10 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
-  menuWrapper: {
-    marginTop: 10,
-  },
+ 
   menuItem: {
     flexDirection: 'row',
-    paddingVertical: 15,
+    paddingVertical: 10,
     paddingHorizontal: 30,
   },
   menuItemText: {
@@ -440,9 +434,9 @@ const styles = StyleSheet.create({
   },
   starIconContainer: {
     position: 'absolute',
-    top: 10,
+    //top: 1,
     right: 10,
-    zIndex: 1,
+    //zIndex: 1,
   },
 
   modalContainer: {

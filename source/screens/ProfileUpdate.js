@@ -1,115 +1,171 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
-import { collection, where, query, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { collection, where, query, getDocs, updateDoc, doc, getDoc } from 'firebase/firestore';
 import { auth, db, storage } from './firebaseConfig'; // Make sure to import storage
 import * as ImagePicker from 'expo-image-picker';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
-const  ProfileUpdate = () => {
+const  ProfileUpdate = ({ navigation }) => {
   const [userData, setUserData] = useState(null);
   const [newName, setNewName] = useState('');
-  const [newSemester, setNewSemester] = useState(''); // Added semester state
+  const [newSemester, setNewSemester] = useState('');
+  const [userId, setUserId] = useState('');
   const [imageUri, setImageUri] = useState(null);
-  const [newImageUri, setnewImageUri] = useState(null);
+  const [newImageUri, setNewImageUri] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const usersRef = collection(db, 'users');
-        const q = query(usersRef, where('email', '==', auth.currentUser.email));
+        const q = query(collection(db, 'users'), where('email', '==', auth.currentUser.email));
         const querySnapshot = await getDocs(q);
-
+  
         if (querySnapshot.empty) {
           console.error('No user document found for the current user.');
           return;
         }
-
+  
         const userData = querySnapshot.docs[0].data();
         const { userName, dp_url, semester } = userData;
-
+        const userId = querySnapshot.docs[0].id; // Get the user ID
+  
+        console.log('Fetched user ID:', userId); // Log the fetched user ID
+  
         setUserData({ userName, dp_url, semester });
         setNewName(userName);
         setNewSemester(semester);
+        setUserId(userId); // Set the user ID state
         setImageUri(dp_url); // Set the initial imageUri
       } catch (error) {
-        console.log(error);
+        console.error('Error fetching user data:', error);
       }
     };
-
+  
     fetchUserData();
   }, []);
-
+  
+  
   const handleImagePick = async () => {
     try {
-            let result = await ImagePicker.launchImageLibraryAsync({
-              mediaTypes: ImagePicker.MediaTypeOptions.Images,
-              allowsEditing: true,
-              aspect: [4, 4],
-              quality: 1,
-            });
-        
-            if (!result.canceled) {
-              // Make sure the `assets` array is defined and not empty
-              if (result.assets && result.assets.length > 0) {
-                setnewImageUri(result.assets[0].uri);
-                setImageUri(result.assets[0].uri);
-              } else {
-                console.error('Image picker result is missing the "assets" array or is empty.');
-                Alert.alert('Error', 'Failed to pick image. Please try again.');
-              }
-            }
-          } catch (e) {
-            console.log(e);
-            Alert.alert('Error', 'Failed to pick image. Please try again.');
-          }
-  };
-
-  const handleUpdateProfile = async () => {
-    const storageUrl = 'renteasyproject.appspot.com';
-    try {
-      const userDocRef = doc(db, 'users', auth.currentUser.user_id);
-    
-      // Update user name and semester
-      await updateDoc(userDocRef, { userName: newName, semester: newSemester });
-    
-      // Update profile picture if a new image is selected
-      if (newImageUri) {
-        setLoading(true);
-        const fileName = `images/${auth.currentUser.user_id}_${Date.now()}`;
-    
-        const storageRef = storage.ref();
-        const imageRef = storageRef.child(fileName);
-    
-        try {
-          const response = await imageRef.put(await fetch(newImageUri).then((response) => response.blob()));
-          const downloadURL = await response.ref.getDownloadURL();
-    
-          // Update the user document with the new image URL
-          await updateDoc(userDocRef, { dp_url: downloadURL });
-        } catch (error) {
-          console.error('Error uploading image:', error);
-          Alert.alert('Error', 'Failed to upload image. Please try again.');
-        } finally {
-          setLoading(false); // Ensure loading state is set to false after the operation
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 4],
+        quality: 1,
+      });
+  
+      if (!result.canceled) {
+        // Make sure the `assets` array is defined and not empty
+        if (result.assets && result.assets.length > 0) {
+          setNewImageUri(result.assets[0].uri);
+          setImageUri(result.assets[0].uri);
+        } else {
+          console.error('Image picker result is missing the "assets" array or is empty.');
+          Alert.alert('Error', 'Failed to pick image. Please try again.');
         }
       }
-    
-      // Refresh user data after the update
-      const updatedUserData = {
-        userName: newName,
-        semester: newSemester,
-        dp_url: newImageUri || userData.dp_url, // Use newImageUri when available, otherwise use userData.dp_url
-      };
+    } catch (e) {
+      console.log(e);
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
+    }
+  };
+
+  const handleUpdateProfile = async (navigation) => {
+    console.log('Updating profile...');
+    setLoading(true);
+  
+    try {
+      const userDocRef = doc(db, 'users', userId); // Use userId from state
+  
+      // Update user name and semester
+      await updateDoc(userDocRef, { userName: newName, semester: newSemester });
+      console.log('User name and semester updated successfully.');
+  
+      // Update profile picture if a new image is selected
+      if (newImageUri) {
+        console.log('Uploading new profile picture...');
+        const fileName = `Images/${newName}_${Date.now()}`;
+  
+        // Get a reference to the storage service
+        const storageRef = ref(storage, fileName);
+  
+        // Convert data URL to Blob
+        const blob = await (await fetch(newImageUri)).blob();
+  
+        // Upload file to Firebase Storage using put
+        const uploadTask = uploadBytes(storageRef, blob);
+  
+        // Wait for the upload to complete
+        await uploadTask;
+  
+        // Get download URL and update the user document with the new image URL
+        const downloadURL = await getDownloadURL(storageRef);
+        console.log('New profile picture uploaded successfully:', downloadURL);
+  
+        // Update the user document with the new image URL
+        await updateDoc(userDocRef, { dp_url: downloadURL });
+        console.log('User document updated with new profile picture URL.');
+  
+        // Refresh user data to reflect the updated image URL
+        const updatedUserData = { ...userData, dp_url: downloadURL };
+        setUserData(updatedUserData);
+      }
+  
+      // Fetch updated user data after profile update
+      const updatedUserSnapshot = await getDoc(userDocRef);
+      const updatedUserData = updatedUserSnapshot.data();
       setUserData(updatedUserData);
-    
-      Alert.alert('Profile Updated', 'Your profile has been successfully updated!');
+
+   // Update user name in the blogs collection
+const blogsRef = collection(db, 'blogs');
+const querySnapshot = await getDocs(query(blogsRef, where('userId', '==', userId))); // Filter blogs by userId
+querySnapshot.forEach(async (blogDoc) => {
+  try {
+    const blogDocRef = doc(db, 'blogs', blogDoc.id); // Use blogDoc.id as the document ID
+    await updateDoc(blogDocRef, { userName: newName }); // Update userName in each blog
+  } catch (error) {
+    console.error('Error updating userName in blog:', error);
+  }
+});
+
+
+
+  
+      // Alert the user about the successful profile update
+      Alert.alert('Profile Updated', 'Your profile has been successfully updated!', [
+        {
+          text: 'OK',
+          onPress: () => {
+            // Logout the user
+            handleLogout(navigation);
+          },
+        },
+      ]);
     } catch (error) {
       console.error('Error updating profile:', error);
       Alert.alert('Error', 'Failed to update profile. Please try again.');
     } finally {
-      setLoading(false); // Ensure loading state is set to false after the operation
+      setLoading(false);
     }
   };
+  
+  
+  const handleLogout = () => {
+    auth
+      .signOut()
+      .then(() => {
+        navigation.replace('Login');
+      })
+      .catch((error) => {
+        console.error('Error signing out:', error);
+      });
+  };
+  
+  
+  
+
+  
+  
   
   
 
@@ -138,9 +194,10 @@ const  ProfileUpdate = () => {
             />
           </View>
 
-          <TouchableOpacity style={styles.updateButton} onPress={handleUpdateProfile}>
-            <Text style={styles.updateButtonText}>Update Profile</Text>
-          </TouchableOpacity>
+          <TouchableOpacity style={styles.updateButton} onPress={() => handleUpdateProfile(navigation)}>
+  <Text style={styles.updateButtonText}>Update Profile</Text>
+</TouchableOpacity>
+
         </View>
       )}
     </View>

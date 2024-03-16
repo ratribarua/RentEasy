@@ -7,6 +7,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import moment from 'moment';
 import { FontAwesome } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+
 
 export default function Signup({ navigation }) {
 
@@ -72,7 +74,7 @@ const pickImage = async () => {
     // Log the result object
     console.log("Result:", result);
 
-    if (!result.cancelled) {
+    if (!result.canceled) {
       setImage(result.assets[0].uri); // Check this line
       console.log("Selected image URI:", result.assets[0].uri);
     } else {
@@ -87,13 +89,28 @@ const pickImage = async () => {
 // Modify the uploadImage function to log errors
 const uploadImage = async () => {
   try {
+    console.log("Inside uploadImage function");
     const response = await fetch(image);
+    console.log("Fetched image successfully");
     const blob = await response.blob();
+    console.log("Converted image to blob successfully");
     const imageName = userName + '_' + Date.now(); // Unique image name
-    const ref = storage.ref().child('profile_images/' + imageName);
-    await ref.put(blob);
-    const downloadURL = await ref.getDownloadURL();
-    console.log("Image uploaded successfully:", downloadURL);
+    console.log("Image name:", imageName);
+    
+    // Initialize storage instance using getStorage function
+    const storageInstance = getStorage();
+
+    // Create a reference to the desired location
+    const imageRef = ref(storageInstance, 'Images/' + imageName);
+    console.log("Image reference:", imageRef);
+    
+    // Upload blob to the reference
+    await uploadBytes(imageRef, blob);
+    console.log("Image uploaded to Firebase Storage successfully");
+
+    // Get download URL
+    const downloadURL = await getDownloadURL(imageRef);
+    console.log("Download URL:", downloadURL);
     return downloadURL;
   } catch (error) {
     console.error("Error uploading image to Firebase Storage:", error);
@@ -102,17 +119,21 @@ const uploadImage = async () => {
 };
 
 
-// Modify the doFireBaseUpdate function to handle the case when uploadImage returns null
-const doFireBaseUpdate = async () => {
+const doFirebaseUpdate = async () => {
+  console.log("Inside doFirebaseUpdate function");
   const usersRef = collection(db, 'users');
   try {
     let imageURL = null;
     if (image) {
+      console.log("Image is not null, uploading image...");
       imageURL = await uploadImage();
+      console.log("Image URL after upload:", imageURL);
       if (!imageURL) {
         console.error("Failed to upload image to Firebase Storage.");
         return;
       }
+    } else {
+      console.log("Image is null, skipping image upload");
     }
     const docRef = await addDoc(usersRef, {
       "userName": userName,
@@ -123,12 +144,14 @@ const doFireBaseUpdate = async () => {
       'birthday': birthDate,
       "user_id": ''
     });
-
-    updateDoc(doc(db, "users", docRef.id), { "user_id": docRef.id })
+    console.log("Document added to Firestore successfully");
+    await updateDoc(doc(db, "users", docRef.id), { "user_id": docRef.id });
+    console.log("User ID updated successfully");
   } catch (e) {
     console.error("Error updating Firestore document:", e);
   }
-}
+};
+
 
 
 
@@ -145,7 +168,7 @@ const doFireBaseUpdate = async () => {
         console.log(e)
       }
       setAllNone()
-      doFireBaseUpdate()
+      doFirebaseUpdate()
       setLoading(false)
       alert("Account Created! Please check your email and verify yourself.")
     } catch (e) {
@@ -296,7 +319,7 @@ const doFireBaseUpdate = async () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 10,
@@ -361,15 +384,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#e6e6fa',
     padding: 10,
     borderRadius: 8,
-    marginTop: 10,
     alignItems: 'center',
+    height: 40,
   },
   imagePreview: {
-    width: 200,
-    height: 200,
+    width: 80,
+    height: 80,
     resizeMode: 'cover',
-    borderRadius: 8,
-    marginTop: 10,
+    borderRadius: 90,
+    marginTop: 5,
+    marginBottom: 5,
+    alignSelf: 'center',
   },
 });
 

@@ -27,7 +27,7 @@ const StackNav =() =>{
   return(
     <Stack.Navigator initialRouteName='WelcomePage'
     screenOptions={{
-      //statusBarColor: '#0163d2',
+      statusBarColor: 'white',
       headerStyle: {
         backgroundColor: '#00bfff',
       },

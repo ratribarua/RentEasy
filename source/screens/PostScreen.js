@@ -1,7 +1,6 @@
-// PostScreen.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Alert } from 'react-native';
-import { collection, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { auth, db } from './firebaseConfig';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
@@ -128,28 +127,74 @@ const PostScreen = ({ navigation }) => {
     }
   };
 
+// Function to delete a blog
+const handleDeleteBlog = async (blogId) => {
+  try {
+    // Show confirmation dialog
+    Alert.alert(
+      'Confirmation',
+      'Are you sure you want to delete this blog?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          onPress: async () => {
+            const blogRef = doc(db, 'blogs', blogId);
+            await deleteDoc(blogRef);
+
+            // Remove the deleted blog from the state
+            setBlogs((prevBlogs) => prevBlogs.filter((blog) => blog.id !== blogId));
+
+            Alert.alert('Success', 'Blog deleted successfully!');
+          },
+          style: 'destructive',
+        },
+      ],
+      { cancelable: false }
+    );
+  } catch (error) {
+    console.error('Error deleting blog:', error);
+    Alert.alert('Error', 'Failed to delete blog. Please try again.');
+  }
+};
+
+
   const renderBlogItem = ({ item }) => (
     <View style={styles.blogItem}>
-      <Text>{item.userName}'s Blog</Text>
+      <Text style={styles.userNameText}>{item.userName}'s Blog</Text>
       <Text style={styles.blogTitle}>{item.title}</Text>
       <Text style={styles.blogContent}>{item.content}</Text>
       <View style={styles.interactionContainer}>
         <Text>Comments: {item.comments.length}</Text>
 
-        {/* Like button */}
-        <TouchableOpacity
-          onPress={() => handleLikeDislike(item.id, 'likes')}
-          style={item.userReacted === 'likes' ? styles.likedButton : styles.interactionButton}>
-          <Icon name="thumb-up-outline" color={item.userReacted === 'likes' ? '#32cd32' : '#777777'} size={20} />
-          <Text>{item.likes}</Text>
-        </TouchableOpacity>
-        {/* Dislike button */}
-        <TouchableOpacity
-          onPress={() => handleLikeDislike(item.id, 'dislikes')}
-          style={item.userReacted === 'dislikes' ? styles.dislikedButton : styles.interactionButton}>
-          <Icon name="thumb-down-outline" color={item.userReacted === 'dislikes' ? '#ff0000' : '#777777'} size={20} />
-          <Text>{item.dislikes}</Text>
-        </TouchableOpacity>
+       {/* Like and dislike icons */}
+    <View>
+      <TouchableOpacity onPress={() => handleLikeDislike(item.id, 'likes')}>
+        <Icon
+          name={item.userReacted === 'likes' ? 'thumb-up' : 'thumb-up-outline'}
+          color={item.userReacted === 'likes' ? '#0163d2' : '#0163d2'}
+          size={20}
+        />
+      </TouchableOpacity>
+      <Text>{item.likes}</Text>
+    </View>
+    <View>
+      <TouchableOpacity onPress={() => handleLikeDislike(item.id, 'dislikes')}>
+        <Icon
+          name={item.userReacted === 'dislikes' ? 'thumb-down' : 'thumb-down-outline'}
+          color={item.userReacted === 'dislikes' ? '#0163d2' : '#0163d2'}
+          size={20}
+        />
+      </TouchableOpacity>
+      <Text>{item.dislikes}</Text>
+    </View>
+               {/* Delete button */}
+       <TouchableOpacity onPress={() => handleDeleteBlog(item.id)} style={styles.deleteButton}>
+       <Icon name="delete" size={24} color="#778899" />
+       </TouchableOpacity>
       </View>
       {/* Comment section */}
       <View style={styles.commentSection}>
@@ -159,9 +204,9 @@ const PostScreen = ({ navigation }) => {
           value={newComment}
           onChangeText={(text) => setNewComment(text)}
         />
-<TouchableOpacity onPress={() => handleAddComment(item.id, userData?.userName, userData?.userRef)}>
-  <Text style={styles.commentButton}>Comment</Text>
-</TouchableOpacity>
+       <TouchableOpacity onPress={() => handleAddComment(item.id, userData?.userName, userData?.userRef)}>
+       <Text style={styles.commentButton}>Comment</Text>
+       </TouchableOpacity>
 
         <FlatList
           data={item.comments}
@@ -190,6 +235,14 @@ const styles = StyleSheet.create({
     padding: 16,
     justifyContent: 'center',
   },
+  
+  userNameText: {
+    fontWeight: 'bold',
+    fontSize: 20,
+    marginBottom: 2, 
+    color:"#000080"
+  },
+
   input: {
     height: 40,
     borderColor: 'gray',
@@ -259,6 +312,11 @@ const styles = StyleSheet.create({
   interactionButton: {
     padding: 8,
     borderRadius: 4,
+  },
+  deleteIcon: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
   },
 });
 
