@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Alert,Image } from 'react-native';
 import { collection, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { auth, db } from './firebaseConfig';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -167,6 +167,10 @@ const handleDeleteBlog = async (blogId) => {
       <Text style={styles.userNameText}>{item.userName}'s Blog</Text>
       <Text style={styles.blogTitle}>{item.title}</Text>
       <Text style={styles.blogContent}>{item.content}</Text>
+          {/* Display the picture */}
+    {item.imageURL && (
+      <Image source={{ uri: item.imageURL }} style={styles.blogImage} />
+    )}
       <View style={styles.interactionContainer}>
         <Text>Comments: {item.comments.length}</Text>
 
@@ -275,6 +279,13 @@ const styles = StyleSheet.create({
   blogContent: {
     marginBottom: 8,
   },
+  blogImage: {
+    width: '100%', // Adjust width as needed
+    height: 200, // Adjust height as needed
+    resizeMode: 'cover', // Preserve aspect ratio while covering the entire container
+    marginBottom: 8, // Adjust margin as needed
+  },
+  
   interactionContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
