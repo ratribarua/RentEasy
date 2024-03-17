@@ -98,14 +98,3 @@ const styles = StyleSheet.create({
   },
 });
 
-/*<View style={styles.bottomDrawerSection}>
-        <DrawerItem
-          icon={({color, size}) => (
-            <Icon name="exit-to-app" color={color} size={size} />
-          )}
-          label="Sign Out"
-          onPress={() => {
-          navigation.navigate(WelcomePage);
-      }}
-        />
-      </View>*/

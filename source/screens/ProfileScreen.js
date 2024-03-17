@@ -4,13 +4,14 @@ import { Avatar, Title, TouchableRipple, IconButton } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import RatingScreen from './RatingScreen'; // Import your RatingScreen component
 import { useNavigation } from '@react-navigation/native';
-import { collection, query, where, getDocs, addDoc, doc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc} from 'firebase/firestore';
 import { auth, db } from './firebaseConfig';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 import * as ImagePicker from 'expo-image-picker';
 import { Camera } from 'expo-camera';
 
+import { Picker } from '@react-native-picker/picker';
 
 const ProfileScreen = () => {
   //get user info states
@@ -42,18 +43,18 @@ const ProfileScreen = () => {
     setRatingModalVisible(false);
   };
 
-  // Function to update user data including userName
-  const updateUserData = async (newUserName) => {
-    try {
-      const usersRef = doc(db, 'users', userData.userRef);
-      await updateDoc(usersRef, { userName: newUserName });
+  // // Function to update user data including userName
+  // const updateUserData = async (newUserName) => {
+  //   try {
+  //     const usersRef = doc(db, 'users', userData.userRef);
+  //     await updateDoc(usersRef, { userName: newUserName });
 
-      // Refetch user data after updating userName
-      await getUserData();
-    } catch (error) {
-      console.error('Error updating user data:', error);
-    }
-  };
+  //     // Refetch user data after updating userName
+  //     await getUserData();
+  //   } catch (error) {
+  //     console.error('Error updating user data:', error);
+  //   }
+  // };
 
   //check if log in
   useEffect(() => {
@@ -117,6 +118,16 @@ const closeCamera = () => {
   setCameraVisible(false);
 };
 
+//permission for camera access
+useEffect(() => {
+  (async () => {
+    const { status } = await Camera.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Permission to access camera was denied');
+    }
+  })();
+}, []);
+
 // Function to handle capturing an image
 const takePicture = async () => {
   if (cameraRef.current) {
@@ -124,12 +135,14 @@ const takePicture = async () => {
       const { uri } = await cameraRef.current.takePictureAsync();
       console.log("Captured image URI:", uri); // Log the URI of the captured image
       setCapturedImage(uri);
+      setImage(uri); // Set the captured image URI to the image state variable
       closeCamera(); // Close the camera modal after capturing the image
     } catch (error) {
       console.error("Error taking picture:", error); // Log any errors that occur during picture taking
     }
   }
 };
+
 
 
 
@@ -189,49 +202,60 @@ const takePicture = async () => {
     }
   };
 
-  //post new blog
-  const handlePostBlog = async () => {
-    try {
-      const date = new Date().toISOString();
-      let imageURL = null;
+//post new blog
+const handlePostBlog = async () => {
+  try {
+    const date = new Date().toISOString();
+    let imageURL = null;
 
-      // Check if an image is selected
-      if (image) {
-        // Upload the image to Firebase Storage
-        imageURL = await uploadImage(userData.userName);
-      }
-
-      // Create the blog data object
-      const blogData = {
-        title: newBlogTitle,
-        content: newBlogContent,
-        comments: [],
-        likes: 0,
-        dislikes: 0,
-        userId: userData?.userRef,
-        userName: userData?.userName,
-        date: date,
-        imageURL: imageURL, // Include the imageURL in the blog data
-      };
-
-      // Add the blog data to Firestore
-      const blogsRef = collection(db, 'blogs');
-      const newBlogDoc = await addDoc(blogsRef, blogData);
-
-      console.log('Blog posted successfully!');
-
-      // Reset input text and image
-      setNewBlogTitle('');
-      setNewBlogContent('');
-      setImage(null);
-
-      // Provide user feedback or navigate back to the profile screen
-      Alert.alert('Success', 'Blog posted successfully', [{ text: 'OK', onPress: () => navigation.navigate('Profile') }]);
-    } catch (error) {
-      console.error('Error posting blog:', error);
-      Alert.alert('Error', 'Failed to post blog. Please try again.');
+    // Check if an image is selected
+    if (image) {
+      // Upload the image to Firebase Storage
+      imageURL = await uploadImage(userData.userName);
     }
-  };
+
+    const blogData = {
+      title: newBlogTitle,
+      content: newBlogContent,
+      likes: {}, // Initialize likes as an empty object
+      dislikes: {}, // Initialize dislikes as an empty object
+      comments: [], // Initialize comments as an empty array
+      date: date,
+      imageURL: imageURL,
+    };
+    
+    // Add user's reaction to likes
+    blogData.likes[userData.userRef] = false; // Initialize user's like as false
+    
+    // Add user's reaction to dislikes
+    blogData.dislikes[userData.userRef] = false; // Initialize user's dislike as false
+    
+    // Add a comment
+    blogData.comments.push({
+      userId: userData.userRef,
+      userName: userData.userName,
+      text: newComment,
+    });
+
+    // Add the blog data to Firestore
+    const blogsRef = collection(db, 'blogs');
+    const newBlogDoc = await addDoc(blogsRef, blogData);
+
+    console.log('Blog posted successfully!');
+
+    // Reset input text and image
+    setNewBlogTitle('');
+    setNewBlogContent('');
+    setImage(null);
+
+    // Provide user feedback or navigate back to the profile screen
+    Alert.alert('Success', 'Blog posted successfully', [{ text: 'OK', onPress: () => navigation.navigate('ProfileScreen') }]);
+  } catch (error) {
+    console.error('Error posting blog:', error);
+    Alert.alert('Error', 'Failed to post blog. Please try again.');
+  }
+};
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -289,57 +313,56 @@ const takePicture = async () => {
               </View>
             </View>
 
-            <View>
-              <TouchableRipple onPress={() => navigation.navigate('HomePage')}>
-                <View style={styles.menuItem}>
-                  <Icon name="book-arrow-right" color="#4b0082" size={25} />
-                  <Text style={styles.menuItemText}>My Books(to give rent)</Text>
-                </View>
-              </TouchableRipple>
+             <View>
+              <Picker
+                selectedValue={null}
+                onValueChange={(itemValue, itemIndex) => {
+                  switch (itemValue) {
+                    case 'myBooks':
+                      navigation.navigate('MyBooks');
+                      break;
+                    case 'borrowed':
+                      // Handle borrowed action
+                      break;
+                    case 'profileUpdate':
+                      navigation.navigate('ProfileUpdate');
+                      break;
+                    case 'logout':
+                      handleLogout();
+                      break;
+                    case 'postScreen':
+                      navigation.navigate('PostScreen', { userId: userData?.userRef, userName: userData?.userName });
+                      break;
+                    default:
+                      break;
+                  }
+                }}
+                
+              >
+                <Picker.Item label="See More" value={null} style={{ fontSize: 20,padding: 150, color: "#9370db",  fontWeight:"bold"}} />
+                <Picker.Item label="All Books" value="myBooks" style={{ fontSize: 18,padding: 150, fontWeight:"bold"}}/>
+                <Picker.Item label="Borrowed" value="borrowed" style={{ fontSize: 18,padding: 150,  fontWeight:"bold"}} />
+                <Picker.Item label="Edit Profile" value="profileUpdate" style={{ fontSize: 18,padding: 150,   fontWeight:"bold"}} />
+                <Picker.Item label="See Blog" value="postScreen" style={{ fontSize: 18,padding: 150, fontWeight:"bold"}}/>
+                <Picker.Item label="Logout" value="logout" style={{ fontSize: 18,padding: 150,  fontWeight:"bold"}} />
 
-              <TouchableRipple onPress={() => { }}>
-                <View style={styles.menuItem}>
-                  <Icon name="book-arrow-left-outline" color="#4b0082" size={25} />
-                  <Text style={styles.menuItemText}>Borrowed</Text>
-                </View>
-              </TouchableRipple>
-
-              <TouchableRipple onPress={() => navigation.navigate('ProfileUpdate')}>
-                <View style={styles.menuItem}>
-                  <Icon name="cog-outline" color="#4b0082" size={25} />
-                  <Text style={styles.menuItemText}>Edit Profile</Text>
-                </View>
-              </TouchableRipple>
-
-              <TouchableRipple onPress={handleLogout}>
-                <View style={styles.menuItem}>
-                  <Icon name="logout" color="#4b0082" size={25} />
-                  <Text style={styles.menuItemText}>Logout</Text>
-                </View>
-              </TouchableRipple>
-
-              {/* Link to PostScreen */}
-              <TouchableOpacity onPress={() => navigation.navigate('PostScreen', { userId: userData?.userRef, userName: userData?.userName })}>
-                <View style={styles.menuItem}>
-                  <Icon name="pencil" color="#4b0082" size={25} />
-                  <Text style={styles.menuItemText}>See Blog</Text>
-                </View>
-              </TouchableOpacity>
+              </Picker>
+            </View>
 
               {auth.currentUser && (
                 <View>
-                <Text style={styles.heading}>Post Your Blogs</Text>
+                <Text style={styles.heading}>Post Your Books</Text>
                   {/* Blog posting section */}
                   <View style={styles.blogPostSection}>
                     <TextInput
                       style={styles.input}
-                      placeholder="Title of the blog..."
+                      placeholder="Title of the book..."
                       value={newBlogTitle}
                       onChangeText={(text) => setNewBlogTitle(text)}
                     />
                     <TextInput
                       style={styles.input}
-                      placeholder="Write your blog here..."
+                      placeholder="Write your book details here..."
                       multiline
                       value={newBlogContent}
                       onChangeText={(text) => setNewBlogContent(text)}
@@ -392,7 +415,7 @@ const takePicture = async () => {
                 </View>
               )}
             </View>
-          </View>
+          
         )}
 
         {!userData && (

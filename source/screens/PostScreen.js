@@ -4,10 +4,10 @@ import { collection, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/fire
 import { auth, db } from './firebaseConfig';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-const PostScreen = ({ navigation }) => {
+
+const PostScreen = ({ navigation, route }) => {
+  const { userId, userName } = route.params;
   const [user, setUser] = useState(null); // User state to store the authenticated user
-  const [newBlogTitle, setNewBlogTitle] = useState('');
-  const [newBlogContent, setNewBlogContent] = useState('');
   const [blogs, setBlogs] = useState([]);
   const [newComment, setNewComment] = useState('');
 
@@ -108,7 +108,7 @@ const PostScreen = ({ navigation }) => {
     }
   };
 
-  const handleAddComment = async (blogId) => {
+  const handleAddComment = async (blogId,userName, userId) => {
     try {
       if (newComment.trim() !== '') {
         const blogRef = doc(db, 'blogs', blogId);
@@ -208,7 +208,7 @@ const handleDeleteBlog = async (blogId) => {
           value={newComment}
           onChangeText={(text) => setNewComment(text)}
         />
-       <TouchableOpacity onPress={() => handleAddComment(item.id, userData?.userName, userData?.userRef)}>
+       <TouchableOpacity onPress={() => handleAddComment(item.id, userName,userId)}>
        <Text style={styles.commentButton}>Comment</Text>
        </TouchableOpacity>
 

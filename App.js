@@ -1,12 +1,13 @@
 import * as React from 'react';
 import { NavigationContainer , useNavigation, DrawerActions} from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import Icon from 'react-native-vector-icons/Entypo';
+//import Icon from 'react-native-vector-icons/Entypo';
 import {createDrawerNavigator} from '@react-navigation/drawer';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import Login from './source/screens/Login';
 import WelcomePage from './source/screens/WelcomePage';
-import HomePage from './source/screens/HomePage';
+import MyBooks from './source/screens/MyBooks';
 import Signup from './source/screens/Signup';
 
 import DrawerContent from './source/screens/DrawerContent';
@@ -14,7 +15,7 @@ import RatingScreen from './source/screens/RatingScreen';
 import ProfileScreen from './source/screens/ProfileScreen';
 import PostScreen from './source/screens/PostScreen';
 import ProfileUpdate from './source/screens/ProfileUpdate';
-import Im from './source/screens/Im';
+import SearchScreen from './source/screens/SearchScreen';
 
 
 
@@ -43,16 +44,39 @@ const StackNav =() =>{
           />
         );
       },
-    }} >
+      headerRight: () => (
+        <React.Fragment>
+            <Icon
+              name="magnify"
+              onPress={() => {
+                navigation.navigate('SearchScreen');
+              }}
+              size={30}
+              color="#fff"
+              style={{ marginRight: 10 }}
+            />
+            <Icon
+              name="account-circle"
+              onPress={() => {
+                navigation.navigate('ProfileScreen');
+              }}
+              size={35}
+              color="#fff"
+              style={{ marginRight: 10 }}
+            />
+          </React.Fragment>
+        ),
+      }}
+    >
       <Stack.Screen name="WelcomePage" component={WelcomePage} />
-      <Stack.Screen name="HomePage" component={HomePage} />
+      <Stack.Screen name="MyBooks" component={MyBooks} />
       <Stack.Screen name="Login" component={Login} />
       <Stack.Screen name="Signup" component={Signup} />
       <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
       <Stack.Screen name="RatingScreen" component={RatingScreen} />
       <Stack.Screen name="PostScreen" component={PostScreen} />
       <Stack.Screen name="ProfileUpdate" component={ProfileUpdate} />
-      <Stack.Screen name="okm" component={Im} />
+      <Stack.Screen name="SearchScreen" component={SearchScreen} />
     </Stack.Navigator>
   )
 }
@@ -79,5 +103,3 @@ function App() {
 }
 
 export default App;
-//screenOptions={{headerShown: false}
-//<Stack.Screen name="AddPostScreen" component={AddPostScreen} />
