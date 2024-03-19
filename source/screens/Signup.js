@@ -102,7 +102,6 @@ const uploadImage = async () => {
 
     // Create a reference to the desired location
     const imageRef = ref(storageInstance, 'Images/' + imageName);
-    console.log("Image reference:", imageRef);
     
     // Upload blob to the reference
     await uploadBytes(imageRef, blob);
