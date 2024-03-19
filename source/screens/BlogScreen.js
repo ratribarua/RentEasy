@@ -8,6 +8,10 @@ const BlogScreen = () => {
   const [blogs, setBlogs] = useState([]);
   const [newComment, setNewComment] = useState('');
 
+  //pagination
+  const [page, setPage] = useState(1); // Current page number
+  const [totalPages, setTotalPages] = useState(1); // Total number of pages
+
  
   useEffect(() => {
     const fetchBlogs = async () => {
@@ -22,7 +26,7 @@ const BlogScreen = () => {
             blogsData.push(blogData);
           });
           setBlogs(blogsData);
-          //setTotalPages(Math.ceil(blogsData.length / ITEMS_PER_PAGE));
+          setTotalPages(Math.ceil(blogsData.length / ITEMS_PER_PAGE));
         });
         return () => unsubscribeBlogs();
       } catch (error) {
@@ -146,6 +150,23 @@ const handleDeleteBlog = async (blogId) => {
     }
   };
 
+  //pagination
+  const ITEMS_PER_PAGE = 3; 
+
+// Function to handle next page
+const handleNextPage = () => {
+  if (page < totalPages) {
+    setPage(page + 1);
+  }
+};
+
+// Function to handle previous page
+const handlePrevPage = () => {
+  if (page > 1) {
+    setPage(page - 1);
+  }
+};
+
   const renderBlogItem = ({ item }) => (
     <View style={styles.blogContainer}>
       <Text style={styles.blogAuthor}>Posted by: {item.userName}</Text>
@@ -212,11 +233,25 @@ const handleDeleteBlog = async (blogId) => {
 
   return (
     <View style={styles.container}>
+      {/* FlatList for blogs */}
       <FlatList
-        data={blogs}
-        renderItem={renderBlogItem}
+        data={blogs.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)}
         keyExtractor={(item) => item.id}
+        renderItem={renderBlogItem}
       />
+      {/* Pagination */}
+      <View style={styles.paginationContainer}>
+        {/* Previous page button */}
+        <TouchableOpacity onPress={handlePrevPage} disabled={page === 1}>
+          <Text style={[styles.paginationText, page === 1 && { color: 'gray' }]}>Prev</Text>
+        </TouchableOpacity>
+        {/* Page number */}
+        <Text style={styles.paginationText}>{`${page}/${totalPages}`}</Text>
+        {/* Next page button */}
+        <TouchableOpacity onPress={handleNextPage} disabled={page === totalPages}>
+          <Text style={[styles.paginationText, page === totalPages && { color: 'gray' }]}>Next</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
