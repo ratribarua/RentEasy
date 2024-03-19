@@ -311,7 +311,8 @@ const styles = StyleSheet.create({
   },
   commentText: {
     marginLeft: 10,
-    color: 'red',
+    color: '#4b0082',
+    fontSize: 16,
   },
   blogImage: {
     width: "100%",

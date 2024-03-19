@@ -251,7 +251,7 @@ const handlePostBlog = async () => {
               <View style={{ flexDirection: 'row', marginTop: 15 }}>
                 <Avatar.Image source={{ uri: userData?.userProfilePic }} size={80} />
                 <View style={{ marginLeft: 10 }}>
-                  <Title style={[styles.title, { marginTop: 15, marginBottom: 5, color: "#00008b" }]}>{userData?.userName}</Title>
+                  <Title style={[styles.title, { marginTop: 15, marginBottom: 5, color: "#4b0082" }]}>{userData?.userName}</Title>
                 </View>
                 {/* Star Icon */}
                 {auth.currentUser && (
@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   addButton: {
-    backgroundColor: '#32cd32',
+    backgroundColor: '#4b0082',
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
   },
   menuItemText: {
-    color: '#777777',
+    color: '#4b0082',
     marginLeft: 20,
     fontWeight: '600',
     fontSize: 16,
@@ -529,7 +529,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
-   // Camera modal styles
    cameramodalContainer: {
     flex: 1,
     justifyContent: 'center',
