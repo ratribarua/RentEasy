@@ -1,25 +1,24 @@
 import React from 'react';
-import {View, StyleSheet, Text} from 'react-native';
-import {DrawerContentScrollView, DrawerItem} from '@react-navigation/drawer';
-import {Avatar, Title} from 'react-native-paper';
-import {TouchableOpacity} from 'react-native-gesture-handler';
-import {useNavigation} from '@react-navigation/native';
+import { View, StyleSheet } from 'react-native';
+import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
+import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-
+// Data for drawer menu items
 const DrawerList = [
-  {icon: 'home-outline', label: 'Welcome Home', navigateTo: 'WelcomePage'},
-  {icon: 'login', label: 'Login', navigateTo: 'Login'},
-  {icon: 'open-in-new', label: 'Signup', navigateTo: 'Signup'},
-  {icon: 'emoticon-excited-outline', label: 'Know Me', navigateTo: 'VideoPlaying'},
- 
+  { icon: 'home-outline', label: 'Welcome Home', navigateTo: 'WelcomePage' },
+  { icon: 'login', label: 'Login', navigateTo: 'Login' },
+  { icon: 'open-in-new', label: 'Signup', navigateTo: 'Signup' },
+  { icon: 'emoticon-excited-outline', label: 'Know Me', navigateTo: 'VideoPlaying' },
 ];
-const DrawerLayout = ({icon, label, navigateTo}) => {
+
+// Component for each drawer item
+const DrawerItemComponent = ({ icon, label, navigateTo }) => {
   const navigation = useNavigation();
-  // console.log(userData);
+  
   return (
     <DrawerItem
-      icon={({color, size}) => <Icon name={icon} color={'#4b0082'} size={35} />}
+      icon={({ color, size }) => <Icon name={icon} color={'#4b0082'} size={35} />}
       label={label}
       onPress={() => {
         navigation.navigate(navigateTo);
@@ -28,72 +27,43 @@ const DrawerLayout = ({icon, label, navigateTo}) => {
   );
 };
 
-const DrawerItems = (props) => {
-    return DrawerList.map((el, i) => {
-      return (
-        <DrawerLayout
-          key={i}
-          icon={el.icon}
-          label={el.label}
-          navigateTo={el.navigateTo}
-        />
-      );
-    });
-  };
-function DrawerContent(props) {
+// Component to render all drawer items
+const DrawerItems = () => {
+  return DrawerList.map((item, index) => (
+    <DrawerItemComponent
+      key={index}
+      icon={item.icon}
+      label={item.label}
+      navigateTo={item.navigateTo}
+    />
+  ));
+};
+
+// Main DrawerContent component
+const DrawerContent = (props) => {
   return (
-    <View style={{flex: 1}}>
+    <View style={styles.container}>
       <DrawerContentScrollView {...props}>
         <View style={styles.drawerContent}>
-          <TouchableOpacity activeOpacity={0.8}>     
-          </TouchableOpacity>
-          <View style={styles.drawerSection}>
-            <DrawerItems />
-          </View>
+          <DrawerItems />
         </View>
       </DrawerContentScrollView>
     </View>
   );
-}
-export default DrawerContent;
+};
 
+// Styles
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   drawerContent: {
-    flex: 100,
-  },
-  title: {
-    fontSize: 1,
-    marginTop: 3,
-    fontWeight: 'bold',
-  },
-  caption: {
-    fontSize: 20,
-    lineHeight: 14,
-    // color: '#6e6e6e',
-    width: '100%',
-  },
-  row: {
-    marginTop: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  section: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    // marginRight: 15,
-  },
-  
-  drawerSection: {
+    flex: 1,
     marginTop: 15,
-    borderBottomWidth: 0,
+    borderBottomWidth: 10,
     borderBottomColor: '#dedede',
-    borderBottomWidth: 1,
-  },
-  preference: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    fontSize:180,
   },
 });
 
+export default DrawerContent;
