@@ -16,6 +16,8 @@ import ProfileScreen from './source/screens/ProfileScreen';
 import PostScreen from './source/screens/PostScreen';
 import ProfileUpdate from './source/screens/ProfileUpdate';
 import SearchScreen from './source/screens/SearchScreen';
+import VideoPlaying from './source/screens/VideoPlaying';
+import BlogScreen from './source/screens/BlogScreen';
 
 
 
@@ -77,6 +79,9 @@ const StackNav =() =>{
       <Stack.Screen name="PostScreen" component={PostScreen} />
       <Stack.Screen name="ProfileUpdate" component={ProfileUpdate} />
       <Stack.Screen name="SearchScreen" component={SearchScreen} />
+      <Stack.Screen name="VideoPlaying" component={VideoPlaying} />
+      <Stack.Screen name="BlogScreen" component={BlogScreen} />
+      
     </Stack.Navigator>
   )
 }

@@ -1,47 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Alert,Image } from 'react-native';
-import { collection, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, updateDoc, deleteDoc, getDoc,query, orderBy } from 'firebase/firestore';
 import { auth, db } from './firebaseConfig';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 
-const PostScreen = ({ navigation, route }) => {
-  const { userId, userName } = route.params;
+const PostScreen = ({ navigation}) => {
+ // const { userId, userName } = route.params;
   const [user, setUser] = useState(null); // User state to store the authenticated user
   const [blogs, setBlogs] = useState([]);
   const [newComment, setNewComment] = useState('');
 
-  useEffect(() => {
-    // Check if a user is logged in
-    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
-      if (user) {
-        setUser(user);
-      } else {
-        // If user is not logged in, navigate to the login screen
-        navigation.navigate('Login'); // Replace 'Login' with the name of your login screen
+  const [page, setPage] = useState(1); // Current page number
+  const [totalPages, setTotalPages] = useState(1); // Total number of pages
+
+ useEffect(() => {
+    const fetchBlogs = async () => {
+      try {
+        const blogsRef = collection(db, 'blogs');
+        const queryBlogs = query(blogsRef, orderBy('date', 'desc'));
+        const unsubscribeBlogs = onSnapshot(queryBlogs, (snapshot) => {
+          const blogsData = [];
+          snapshot.forEach((doc) => {
+            const blogData = doc.data();
+            blogData.id = doc.id;
+            blogsData.push(blogData);
+          });
+          setBlogs(blogsData);
+          setTotalPages(Math.ceil(blogsData.length / ITEMS_PER_PAGE));
+        });
+        return () => unsubscribeBlogs();
+      } catch (error) {
+        console.error('Error fetching blogs:', error);
       }
-    });
-
-    // Real-time update for blogs
-    const unsubscribeBlogs = onSnapshot(collection(db, 'blogs'), (snapshot) => {
-      const blogsData = [];
-      snapshot.forEach((doc) => {
-        const blogData = doc.data();
-        blogData.id = doc.id;
-        blogsData.push(blogData);
-      });
-      setBlogs(blogsData);
-    });
-
-    // Cleanup the listeners when the component is unmounted
-    return () => {
-      unsubscribeAuth();
-      unsubscribeBlogs();
     };
-  }, [navigation]);
 
-  //const { userId, userName } = route.params;
+    fetchBlogs();
+  }, []);
 
+  
+  
+  
+  
   const handleLikeDislike = async (blogId, reactionType) => {
     try {
       const blogRef = doc(db, 'blogs', blogId);
@@ -162,73 +162,109 @@ const handleDeleteBlog = async (blogId) => {
 };
 
 
-  const renderBlogItem = ({ item }) => (
-    <View style={styles.blogItem}>
-      <Text style={styles.userNameText}>{item.userName}'s Blog</Text>
-      <Text style={styles.blogTitle}>{item.title}</Text>
-      <Text style={styles.blogContent}>{item.content}</Text>
-          {/* Display the picture */}
+const ITEMS_PER_PAGE = 3; 
+
+// Function to handle next page
+const handleNextPage = () => {
+  if (page < totalPages) {
+    setPage(page + 1);
+  }
+};
+
+// Function to handle previous page
+const handlePrevPage = () => {
+  if (page > 1) {
+    setPage(page - 1);
+  }
+};
+
+const renderBlogItem = ({ item }) => (
+  <View style={styles.blogItem}>
+    {/* Check if item.user exists before accessing its properties */}
+    {item.user && (
+      <Text style={styles.userNameText}>{item.user.userName}'s Blog</Text>
+    )}
+    <Text style={styles.blogTitle}>{item.title}</Text>
+    <Text style={styles.blogContent}>{item.content}</Text>
+    {/* Display the picture */}
     {item.imageURL && (
       <Image source={{ uri: item.imageURL }} style={styles.blogImage} />
     )}
-      <View style={styles.interactionContainer}>
-        <Text>Comments: {item.comments.length}</Text>
-
-       {/* Like and dislike icons */}
-    <View>
-      <TouchableOpacity onPress={() => handleLikeDislike(item.id, 'likes')}>
-        <Icon
-          name={item.userReacted === 'likes' ? 'thumb-up' : 'thumb-up-outline'}
-          color={item.userReacted === 'likes' ? '#0163d2' : '#0163d2'}
-          size={20}
-        />
-      </TouchableOpacity>
-      <Text>{item.likes}</Text>
-    </View>
-    <View>
-      <TouchableOpacity onPress={() => handleLikeDislike(item.id, 'dislikes')}>
-        <Icon
-          name={item.userReacted === 'dislikes' ? 'thumb-down' : 'thumb-down-outline'}
-          color={item.userReacted === 'dislikes' ? '#0163d2' : '#0163d2'}
-          size={20}
-        />
-      </TouchableOpacity>
-      <Text>{item.dislikes}</Text>
-    </View>
-               {/* Delete button */}
-       <TouchableOpacity onPress={() => handleDeleteBlog(item.id)} style={styles.deleteButton}>
-       <Icon name="delete" size={24} color="#778899" />
-       </TouchableOpacity>
+    <View style={styles.interactionContainer}>
+      <Text>Comments: {item.comments.length}</Text>
+      {/* Like and dislike icons */}
+      <View>
+        <TouchableOpacity onPress={() => handleLikeDislike(item.id, 'likes')}>
+          <Icon
+            name={item.userReacted === 'likes' ? 'thumb-up' : 'thumb-up-outline'}
+            color={item.userReacted === 'likes' ? '#0163d2' : '#0163d2'}
+            size={20}
+          />
+        </TouchableOpacity>
+        <Text>{item.likes}</Text>
       </View>
-      {/* Comment section */}
-      <View style={styles.commentSection}>
-        <TextInput
-          style={styles.commentInput}
-          placeholder="Add a comment..."
-          value={newComment}
-          onChangeText={(text) => setNewComment(text)}
-        />
-       <TouchableOpacity onPress={() => handleAddComment(item.id, userName,userId)}>
-       <Text style={styles.commentButton}>Comment</Text>
-       </TouchableOpacity>
-
-        <FlatList
-          data={item.comments}
-          keyExtractor={(comment) => comment?.id?.toString()} // Assuming each comment has a unique ID
-          renderItem={({ item: comment }) => (
-            <View style={styles.commentContainer}>
-              <Text style={styles.commentText}>{comment?.userName}: {comment?.text}</Text>
-            </View>
-          )}
-        />
+      <View>
+        <TouchableOpacity onPress={() => handleLikeDislike(item.id, 'dislikes')}>
+          <Icon
+            name={item.userReacted === 'dislikes' ? 'thumb-down' : 'thumb-down-outline'}
+            color={item.userReacted === 'dislikes' ? '#0163d2' : '#0163d2'}
+            size={20}
+          />
+        </TouchableOpacity>
+        <Text>{item.dislikes}</Text>
       </View>
+      {/* Delete button */}
+      <TouchableOpacity onPress={() => handleDeleteBlog(item.id)} style={styles.deleteButton}>
+        <Icon name="delete" size={24} color="#778899" />
+      </TouchableOpacity>
     </View>
-  );
+    {/* Comment section */}
+    <View style={styles.commentSection}>
+      <TextInput
+        style={styles.commentInput}
+        placeholder="Add a comment..."
+        value={newComment}
+        onChangeText={(text) => setNewComment(text)}
+      />
+      {/* Pass userName and userId from item.user to handleAddComment */}
+      <TouchableOpacity onPress={() => handleAddComment(item.id, item.user.userName, item.user.userId)}>
+        <Text style={styles.commentButton}>Comment</Text>
+      </TouchableOpacity>
+      <FlatList
+        data={item.comments}
+        keyExtractor={(comment) => comment.id?.toString()} // Assuming each comment has a unique ID
+        renderItem={({ item: comment }) => (
+          <View style={styles.commentContainer}>
+            {/* Display comment with userName */}
+            <Text style={styles.commentText}>{comment.userName}: {comment.text}</Text>
+          </View>
+        )}
+      />
+    </View>
+  </View>
+);
 
   return (
     <View style={styles.container}>
-      {/* Display past blogs */}
-      <FlatList data={blogs} keyExtractor={(item) => item.id} renderItem={renderBlogItem} />
+      {/* FlatList for blogs */}
+      <FlatList
+        data={blogs.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)}
+        keyExtractor={(item) => item.id}
+        renderItem={renderBlogItem}
+      />
+      {/* Pagination */}
+      <View style={styles.paginationContainer}>
+        {/* Previous page button */}
+        <TouchableOpacity onPress={handlePrevPage} disabled={page === 1}>
+          <Text style={[styles.paginationText, page === 1 && { color: 'gray' }]}>Prev</Text>
+        </TouchableOpacity>
+        {/* Page number */}
+        <Text style={styles.paginationText}>{`${page}/${totalPages}`}</Text>
+        {/* Next page button */}
+        <TouchableOpacity onPress={handleNextPage} disabled={page === totalPages}>
+          <Text style={[styles.paginationText, page === totalPages && { color: 'gray' }]}>Next</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };

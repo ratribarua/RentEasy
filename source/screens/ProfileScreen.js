@@ -22,6 +22,7 @@ const ProfileScreen = () => {
   const [newBlogTitle, setNewBlogTitle] = useState('');
   const [newBlogContent, setNewBlogContent] = useState('');
   const [image, setImage] = useState(null);
+  const [newComment, setNewComment] = useState(''); 
 
   //camera
   const [isCameraVisible, setCameraVisible] = useState(false);
@@ -43,18 +44,6 @@ const ProfileScreen = () => {
     setRatingModalVisible(false);
   };
 
-  // // Function to update user data including userName
-  // const updateUserData = async (newUserName) => {
-  //   try {
-  //     const usersRef = doc(db, 'users', userData.userRef);
-  //     await updateDoc(usersRef, { userName: newUserName });
-
-  //     // Refetch user data after updating userName
-  //     await getUserData();
-  //   } catch (error) {
-  //     console.error('Error updating user data:', error);
-  //   }
-  // };
 
   //check if log in
   useEffect(() => {
@@ -202,7 +191,7 @@ const takePicture = async () => {
     }
   };
 
-//post new blog
+// Post new blog
 const handlePostBlog = async () => {
   try {
     const date = new Date().toISOString();
@@ -214,32 +203,23 @@ const handlePostBlog = async () => {
       imageURL = await uploadImage(userData.userName);
     }
 
+    // Simplify the structure of blogData
     const blogData = {
       title: newBlogTitle,
       content: newBlogContent,
-      likes: {}, // Initialize likes as an empty object
-      dislikes: {}, // Initialize dislikes as an empty object
+      likes: 0, // Initialize likes with 0
+      dislikes: 0, // Initialize dislikes with 0
       comments: [], // Initialize comments as an empty array
       date: date,
       imageURL: imageURL,
+      userName: userData.userName, // Add userName to blogData
+      userId: userData.userRef // Add userId to blogData
     };
-    
-    // Add user's reaction to likes
-    blogData.likes[userData.userRef] = false; // Initialize user's like as false
-    
-    // Add user's reaction to dislikes
-    blogData.dislikes[userData.userRef] = false; // Initialize user's dislike as false
-    
-    // Add a comment
-    blogData.comments.push({
-      userId: userData.userRef,
-      userName: userData.userName,
-      text: newComment,
-    });
 
     // Add the blog data to Firestore
     const blogsRef = collection(db, 'blogs');
-    const newBlogDoc = await addDoc(blogsRef, blogData);
+    const docRef = await addDoc(blogsRef, blogData);
+    const blogId = docRef.id; // Get the ID of the newly added blog
 
     console.log('Blog posted successfully!');
 
@@ -247,6 +227,7 @@ const handlePostBlog = async () => {
     setNewBlogTitle('');
     setNewBlogContent('');
     setImage(null);
+    setNewComment('');
 
     // Provide user feedback or navigate back to the profile screen
     Alert.alert('Success', 'Blog posted successfully', [{ text: 'OK', onPress: () => navigation.navigate('ProfileScreen') }]);
@@ -255,6 +236,10 @@ const handlePostBlog = async () => {
     Alert.alert('Error', 'Failed to post blog. Please try again.');
   }
 };
+
+
+
+
 
 
   return (
@@ -331,7 +316,7 @@ const handlePostBlog = async () => {
                       handleLogout();
                       break;
                     case 'postScreen':
-                      navigation.navigate('PostScreen', { userId: userData?.userRef, userName: userData?.userName });
+                      navigation.navigate('BlogScreen');
                       break;
                     default:
                       break;
@@ -394,7 +379,7 @@ const handlePostBlog = async () => {
               visible={isCameraVisible}
               onRequestClose={closeCamera}
             >
-              <View style={styles.modalContainer}>
+              <View style={styles.cameramodalContainer}>
               <Camera style={styles.camera} ref={cameraRef} type={Camera.Constants.Type.back}>
 
                   <View style={styles.cameraButtons}>
@@ -545,7 +530,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
    // Camera modal styles
-   modalContainer: {
+   cameramodalContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
