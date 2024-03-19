@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TextInput, TouchableOpacity,Alert } from 'react-native';
-import { collection, query, orderBy, getDocs, onSnapshot, doc, updateDoc, arrayUnion ,getDoc} from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, deleteDoc,onSnapshot, doc, updateDoc, arrayUnion ,getDoc} from 'firebase/firestore';
 import { db } from './firebaseConfig';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
