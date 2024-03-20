@@ -21,6 +21,7 @@ import SearchScreen from './source/screens/SearchScreen';
 import VideoPlaying from './source/screens/VideoPlaying';
 import BlogScreen from './source/screens/BlogScreen';
 import MyBooks from './source/screens/MyBooks';
+import Gmaps from './source/screens/Gmaps';
 
 
 
@@ -52,9 +53,9 @@ const StackNav =() =>{
       headerRight: () => (
         <React.Fragment>
             <Icon
-              name="magnify"
+              name="map-marker"
               onPress={() => {
-                navigation.navigate('SearchScreen');
+                navigation.navigate('Gmaps');
               }}
               size={30}
               color="#fff"
@@ -84,6 +85,7 @@ const StackNav =() =>{
       <Stack.Screen name="SearchScreen" component={SearchScreen} />
       <Stack.Screen name="VideoPlaying" component={VideoPlaying} />
       <Stack.Screen name="BlogScreen" component={BlogScreen} />
+      <Stack.Screen name="Gmaps" component={Gmaps} />
       
     </Stack.Navigator>
   )

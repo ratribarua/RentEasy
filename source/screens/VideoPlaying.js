@@ -8,7 +8,7 @@ const VideoPlaying = () => {
     const onStateChange = useCallback(state => {
         if(state === 'ended'){
             setPlaying(false);
-            Alert.alert('video has finished playing!');
+            Alert.alert('Video has finished...Thanks for watching!');
         }
     }, []);
 
@@ -22,15 +22,15 @@ const VideoPlaying = () => {
                 <Text style={styles.aboutAppTitle}>About App</Text>
                 <YouTubePlayer
                 style={{ borderRadius:20, marginTop: 5}}
-                height={230}
+                height={250 }
                 play= {playing}
                 videoId={'tzyGQJNIsHo'}
                 onChangeState={onStateChange}
             />
             </View>
-            <View><Text style={styles.aboutAppDescription}>
-                    
-The book rental app provides users with a convenient way to access a wide range of books without the need to purchase them outright.
+            <View><Text style={styles.aboutAppDescription}>        
+            The book rental app provides users with a convenient way 
+            to access a wide range of books without the need to purchase them outright.
                 </Text></View>
         </View>
     );
