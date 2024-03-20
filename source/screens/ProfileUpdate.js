@@ -49,7 +49,7 @@ const  ProfileUpdate = ({ navigation }) => {
   
   const handleImagePick = async () => {
     try {
-      let result = await ImagePicker.launchImageLibraryAsync({
+      let result = await ImagePicker.launchImageLibraryAsync({    //opens device's image library
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 4],
@@ -70,6 +70,8 @@ const  ProfileUpdate = ({ navigation }) => {
       Alert.alert('Error', 'Failed to pick image. Please try again.');
     }
   };
+
+  
   // Function to check unique username
   const checkUniqueUserName = async (userName) => {
     try {
@@ -81,6 +83,9 @@ const  ProfileUpdate = ({ navigation }) => {
       console.error('Error checking unique username:', error);
     }
   };
+
+
+
 
   const handleUpdateProfile = async (navigation) => {
     console.log('Updating profile...');
@@ -134,11 +139,11 @@ const  ProfileUpdate = ({ navigation }) => {
       const updatedUserData = updatedUserSnapshot.data();
       setUserData(updatedUserData);
 
-   // Update user name in the blogs collection
-const blogsRef = collection(db, 'blogs');
-const querySnapshot = await getDocs(query(blogsRef, where('userId', '==', userId))); // Filter blogs by userId
-querySnapshot.forEach(async (blogDoc) => {
-  try {
+     // Update user name in the blogs collection
+      const blogsRef = collection(db, 'blogs');
+      const querySnapshot = await getDocs(query(blogsRef, where('userId', '==', userId))); // Filter blogs by userId
+       querySnapshot.forEach(async (blogDoc) => {
+    try {
     const blogDocRef = doc(db, 'blogs', blogDoc.id); // Use blogDoc.id as the document ID
     await updateDoc(blogDocRef, { userName: newName }); // Update userName in each blog
   } catch (error) {
