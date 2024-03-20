@@ -25,8 +25,8 @@ export default function Signup({ navigation }) {
   const [image, setImage] = useState(null); // State to store the selected image
 
   const userNameMessages = [
-    ["This is a unique Username", 'green'],
-    ["The Username has already been taken.", 'red'],
+    ["Unique And Avaiable", 'green'],
+    ["Already Taken, Not Available", 'red'],
     ['', '']
   ]
 
@@ -38,7 +38,7 @@ export default function Signup({ navigation }) {
     setUserName('')
     setBirthDate('')
     setSemester('')
-    setImage(null); // Reset image state
+    setImage(null);
     setUserNameErrorMessage(['', ''])
   }
 
@@ -67,15 +67,16 @@ const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [4, 3],
+      aspect: [10, 10],
       quality: 1,
     });
 
-    // Log the result object
+  // Log the result object
     console.log("Result:", result);
 
     if (!result.canceled) {
-      setImage(result.assets[0].uri); // Check this line
+      // telling my app to remember the location of selected image
+      setImage(result.assets[0].uri);
       console.log("Selected image URI:", result.assets[0].uri);
     } else {
       console.log("Image picking cancelled");
@@ -89,12 +90,13 @@ const pickImage = async () => {
 // Modify the uploadImage function to log errors
 const uploadImage = async () => {
   try {
-    console.log("Inside uploadImage function");
+
     const response = await fetch(image);
     console.log("Fetched image successfully");
     const blob = await response.blob();
-    console.log("Converted image to blob successfully");
-    const imageName = userName + '_' + Date.now(); // Unique image name
+
+    // Unique image name
+    const imageName = userName + '_' + Date.now(); 
     console.log("Image name:", imageName);
     
     // Initialize storage instance using getStorage function
@@ -118,8 +120,8 @@ const uploadImage = async () => {
 };
 
 
+
 const doFirebaseUpdate = async () => {
-  console.log("Inside doFirebaseUpdate function");
   const usersRef = collection(db, 'users');
   try {
     let imageURL = null;
@@ -152,9 +154,7 @@ const doFirebaseUpdate = async () => {
 };
 
 
-
-
-
+//Email Verification
   const registerWithEmail = async () => {
     try {
       setLoading(true)
@@ -216,7 +216,6 @@ const doFirebaseUpdate = async () => {
           placeholder='User Name'
           onChangeText={(text) => setUserName(text)}
           value={userName}
-          underlineColorAndroid="transparent"
           autoCapitalize="none"
         />
         {userNameErrorMessage[0].length > 0 && userName.length > 0 && <Text style={{ color: userNameErrorMessage[1], paddingLeft: 20, fontSize: 13 }}>{userNameErrorMessage[0]}</Text>}
@@ -227,7 +226,6 @@ const doFirebaseUpdate = async () => {
           placeholder='Semester'
           onChangeText={(text) => setSemester(text)}
           value={semester}
-          underlineColorAndroid="transparent"
           autoCapitalize="none"
         />
 
@@ -238,7 +236,6 @@ const doFirebaseUpdate = async () => {
           placeholderTextColor="#aaaaaa"
           onChangeText={(text) => { setEmail(text); setErrorMessage(''); }}
           value={email}
-          underlineColorAndroid="transparent"
           autoCapitalize="none"
         />
         {/* <TextInput
@@ -247,7 +244,6 @@ const doFirebaseUpdate = async () => {
          placeholderTextColor="#aaaaaa"
          onChangeText={(text) => setContactNumber(text)}
          value={contactNumber}
-         underlineColorAndroid="transparent"
          autoCapitalize="none"
         /> */}
 
@@ -259,9 +255,9 @@ const doFirebaseUpdate = async () => {
           placeholder='Password'
           onChangeText={(text) => { setPassword(text); setErrorMessage('') }}
           value={password}
-          underlineColorAndroid="transparent"
           autoCapitalize="none"
         />
+        
         <TextInput
           style={styles.input}
           placeholderTextColor="#aaaaaa"
@@ -269,9 +265,10 @@ const doFirebaseUpdate = async () => {
           placeholder='Confirm password'
           onChangeText={(text) => { setConfirmPassword(text); setErrorMessage(''); }}
           value={confirmPassword}
-          underlineColorAndroid="transparent"
           autoCapitalize="none"
         />
+
+
         <TouchableOpacity
           style={styles.birthdayPicker}
           onPress={() => setBirthDateModalStatus(true)}>
@@ -280,6 +277,8 @@ const doFirebaseUpdate = async () => {
               {birthDate}
           </Text>
         </TouchableOpacity>
+
+        {/*Datepicker */}
         {birthDateModalStatus && <DateTimePicker
           testID="dateTimePicker"
           value={moment(birthDate, 'DD/MM/YYYY').toDate()}
@@ -296,6 +295,7 @@ const doFirebaseUpdate = async () => {
             setBirthDateModalStatus(false);
           }}
         />}
+
         {errorMessage.length > 0 && <Text style={{ color: 'red', textAlign: 'center' }}>{errorMessage}</Text>}
         <TouchableOpacity
           disabled={password.length == 0 || email.length == 0}

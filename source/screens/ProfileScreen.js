@@ -55,7 +55,6 @@ const ProfileScreen = () => {
         // No user is signed in, navigate to the login screen or show a message
         Alert('');
         navigation.replace('Login');
-        // You can replace it with your login screen route
       }
     });
 

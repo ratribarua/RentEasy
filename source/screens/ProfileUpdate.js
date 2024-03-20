@@ -7,7 +7,11 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const  ProfileUpdate = ({ navigation }) => {
   const [userData, setUserData] = useState(null);
+
   const [newName, setNewName] = useState('');
+  const [isUserNameAvailable, setIsUserNameAvailable] = useState(true); 
+
+  
   const [newSemester, setNewSemester] = useState('');
   const [userId, setUserId] = useState('');
   const [imageUri, setImageUri] = useState(null);
@@ -27,15 +31,13 @@ const  ProfileUpdate = ({ navigation }) => {
   
         const userData = querySnapshot.docs[0].data();
         const { userName, dp_url, semester } = userData;
-        const userId = querySnapshot.docs[0].id; // Get the user ID
-  
-        console.log('Fetched user ID:', userId); // Log the fetched user ID
+        const userId = querySnapshot.docs[0].id; 
   
         setUserData({ userName, dp_url, semester });
         setNewName(userName);
         setNewSemester(semester);
-        setUserId(userId); // Set the user ID state
-        setImageUri(dp_url); // Set the initial imageUri
+        setUserId(userId);
+        setImageUri(dp_url);
       } catch (error) {
         console.error('Error fetching user data:', error);
       }
@@ -55,7 +57,6 @@ const  ProfileUpdate = ({ navigation }) => {
       });
   
       if (!result.canceled) {
-        // Make sure the `assets` array is defined and not empty
         if (result.assets && result.assets.length > 0) {
           setNewImageUri(result.assets[0].uri);
           setImageUri(result.assets[0].uri);
@@ -69,10 +70,27 @@ const  ProfileUpdate = ({ navigation }) => {
       Alert.alert('Error', 'Failed to pick image. Please try again.');
     }
   };
+  // Function to check unique username
+  const checkUniqueUserName = async (userName) => {
+    try {
+      const q = query(collection(db, 'users'), where('userName', '==', userName));
+      const querySnapshot = await getDocs(q);
+
+      setIsUserNameAvailable(querySnapshot.empty);
+    } catch (error) {
+      console.error('Error checking unique username:', error);
+    }
+  };
 
   const handleUpdateProfile = async (navigation) => {
     console.log('Updating profile...');
     setLoading(true);
+
+    if (!isUserNameAvailable) {
+      Alert.alert('Error', 'Username is already taken. Please choose a different one.');
+      setLoading(false);
+      return;
+    }
   
     try {
       const userDocRef = doc(db, 'users', userId); // Use userId from state
@@ -177,14 +195,25 @@ querySnapshot.forEach(async (blogDoc) => {
           <TouchableOpacity onPress={handleImagePick}>
             <Image source={{ uri: imageUri || userData.dp_url }} style={styles.image} />
           </TouchableOpacity>
+
+
+          {/*unique name */}
           <View style={styles.inputBox}>
-            <Text style={styles.label}>Name:</Text>
-            <TextInput
-              style={styles.textInput}
-              value={newName}
-              onChangeText={(text) => setNewName(text)}
-            />
-          </View>
+          <Text style={styles.label}>Name:</Text>
+         <TextInput
+         style={styles.textInput}
+         value={newName}
+           onChangeText={(text) => {
+        setNewName(text);
+        checkUniqueUserName(text);
+          }}
+          />
+        {isUserNameAvailable && <Text style={{ color: 'green' }}>Username is available.</Text>}
+       {!isUserNameAvailable && <Text style={{ color: 'red' }}>Username is already taken.</Text>}
+        </View>
+
+
+
           <View style={styles.inputBox}>
             <Text style={styles.label}>Semester:</Text>
             <TextInput
