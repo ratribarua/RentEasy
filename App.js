@@ -22,7 +22,7 @@ import VideoPlaying from './source/screens/VideoPlaying';
 import BlogScreen from './source/screens/BlogScreen';
 import MyBooks from './source/screens/MyBooks';
 import Gmaps from './source/screens/Gmaps';
-
+import AddBooks from './source/screens/AddBooks';
 
 
 
@@ -86,6 +86,7 @@ const StackNav =() =>{
       <Stack.Screen name="VideoPlaying" component={VideoPlaying} />
       <Stack.Screen name="BlogScreen" component={BlogScreen} />
       <Stack.Screen name="Gmaps" component={Gmaps} />
+      <Stack.Screen name="AddBooks" component={AddBooks} />
       
     </Stack.Navigator>
   )
