@@ -309,8 +309,8 @@ const handlePostBlog = async () => {
                 selectedValue={null}
                 onValueChange={(itemValue, itemIndex) => {
                   switch (itemValue) {
-                    case 'myBooks':
-                      navigation.navigate('MyBooks');
+                    case 'ViewAllBooks':
+                      navigation.navigate('ViewAllBooks');
                       break;
                     case 'borrowed':
                       // Handle borrowed action
@@ -331,7 +331,7 @@ const handlePostBlog = async () => {
                 
               >
                 <Picker.Item label="See More" value={null} style={{ fontSize: 20,padding: 150, color: "#9370db",  fontWeight:"bold"}} />
-                <Picker.Item label="All Books" value="myBooks" style={{ fontSize: 18,padding: 150, fontWeight:"bold"}}/>
+                <Picker.Item label="All Books" value="ViewAllBooks" style={{ fontSize: 18,padding: 150, fontWeight:"bold"}}/>
                 <Picker.Item label="BADD" value="borrowed" style={{ fontSize: 18,padding: 150,  fontWeight:"bold"}} />
                 <Picker.Item label="Edit Profile" value="profileUpdate" style={{ fontSize: 18,padding: 150,   fontWeight:"bold"}} />
                 <Picker.Item label="See Blog" value="postScreen" style={{ fontSize: 18,padding: 150, fontWeight:"bold"}}/>

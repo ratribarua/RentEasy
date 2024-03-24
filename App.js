@@ -20,9 +20,9 @@ import ProfileUpdate from './source/screens/ProfileUpdate';
 import SearchScreen from './source/screens/SearchScreen';
 import VideoPlaying from './source/screens/VideoPlaying';
 import BlogScreen from './source/screens/BlogScreen';
-import MyBooks from './source/screens/MyBooks';
 import Gmaps from './source/screens/Gmaps';
 import AddBooks from './source/screens/AddBooks';
+import ViewAllBooks from './source/screens/ViewAllBooks';
 
 
 
@@ -75,7 +75,6 @@ const StackNav =() =>{
       }}
     >
       <Stack.Screen name="WelcomePage" component={WelcomePage} />
-      <Stack.Screen name="MyBooks" component={MyBooks} />
       <Stack.Screen name="Login" component={Login} />
       <Stack.Screen name="Signup" component={Signup} />
       <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
@@ -87,6 +86,7 @@ const StackNav =() =>{
       <Stack.Screen name="BlogScreen" component={BlogScreen} />
       <Stack.Screen name="Gmaps" component={Gmaps} />
       <Stack.Screen name="AddBooks" component={AddBooks} />
+      <Stack.Screen name="ViewAllBooks" component={ViewAllBooks} />
       
     </Stack.Navigator>
   )
