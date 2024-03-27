@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     button: {
-        backgroundColor: '#32cd32',
+        backgroundColor: '#4b0082',
         padding: 15,
         borderRadius: 150,
         width: '100%',
@@ -197,6 +197,7 @@ const styles = StyleSheet.create({
     buttonTitle: {
         color: 'white',
         textAlign: 'center',
+        fontSize: 20,
     },
     footerView: {
         flexDirection: 'row',

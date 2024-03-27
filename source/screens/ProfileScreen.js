@@ -2,7 +2,7 @@ import React, { useState, useEffect,useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView, Modal, Image } from 'react-native';
 import { Avatar, Title, TouchableRipple, IconButton } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import RatingScreen from './RatingScreen'; // Import your RatingScreen component
+import RatingScreen from './RatingScreen'; 
 import { useNavigation } from '@react-navigation/native';
 import { collection, query, where, getDocs, addDoc} from 'firebase/firestore';
 import { auth, db } from './firebaseConfig';
@@ -244,7 +244,10 @@ const handlePostBlog = async () => {
 };
 
 
-
+// Function to navigate to ViewAllBooks page with userName
+const navigateToViewAllBooks = (userName) => {
+  navigation.navigate('ViewAllBooks', { userName: userName });
+};
 
 
 
@@ -310,7 +313,7 @@ const handlePostBlog = async () => {
                 onValueChange={(itemValue, itemIndex) => {
                   switch (itemValue) {
                     case 'ViewAllBooks':
-                      navigation.navigate('ViewAllBooks');
+                      navigateToViewAllBooks(userData.userName);
                       break;
                     case 'borrowed':
                       // Handle borrowed action

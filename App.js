@@ -23,6 +23,7 @@ import BlogScreen from './source/screens/BlogScreen';
 import Gmaps from './source/screens/Gmaps';
 import AddBooks from './source/screens/AddBooks';
 import ViewAllBooks from './source/screens/ViewAllBooks';
+import ViewCart from './source/screens/ViewCart';
 
 
 
@@ -36,7 +37,7 @@ const StackNav =() =>{
     screenOptions={{
       statusBarColor: 'white',
       headerStyle: {
-        backgroundColor: '#00bfff',
+        backgroundColor: '#4b0082',
       },
       headerTintColor: '#00bfff',
       headerTitleAlign: 'center',
@@ -87,6 +88,7 @@ const StackNav =() =>{
       <Stack.Screen name="Gmaps" component={Gmaps} />
       <Stack.Screen name="AddBooks" component={AddBooks} />
       <Stack.Screen name="ViewAllBooks" component={ViewAllBooks} />
+      <Stack.Screen name="ViewCart" component={ViewCart} />
       
     </Stack.Navigator>
   )

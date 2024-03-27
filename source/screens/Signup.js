@@ -8,21 +8,25 @@ import moment from 'moment';
 import { FontAwesome } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { Picker } from '@react-native-picker/picker';
 
 
 export default function Signup({ navigation }) {
 
-  const [userName, setUserName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [errorMessage, setErrorMessage] = useState('')
-  const [userNameErrorMessage, setUserNameErrorMessage] = useState(['', ''])
-  const [birthDate, setBirthDate] = useState(moment(new Date()).format('DD/MM/YYYY'))
-  const [birthDateModalStatus, setBirthDateModalStatus] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [semester, setSemester] = useState('')
-  const [image, setImage] = useState(null); // State to store the selected image
+  const [userName, setUserName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [userNameErrorMessage, setUserNameErrorMessage] = useState(['', '']);
+  const [birthDate, setBirthDate] = useState(moment(new Date()).format('DD/MM/YYYY'));
+  const [birthDateModalStatus, setBirthDateModalStatus] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [semesterOptions, setSemesterOptions] = useState([]);
+  const [selectedSemester, setSelectedSemester] = useState('');
+  const [image, setImage] = useState(null);
+  const [mobileNumber, setMobileNumber] = useState('');
 
   const userNameMessages = [
     ["Unique And Avaiable", 'green'],
@@ -37,10 +41,21 @@ export default function Signup({ navigation }) {
     setConfirmPassword('')
     setUserName('')
     setBirthDate('')
-    setSemester('')
+    setSelectedSemester('')
+    setSelectedDepartment(''),
+    setMobileNumber(''),
     setImage(null);
     setUserNameErrorMessage(['', ''])
   }
+
+  //multiple dropdown and text
+  const departments = ['CSE', 'EEE'];
+
+  const semesterOptionsByDepartment = {
+    'CSE': ['Semester 1', 'Semester 2', 'Semester 3','Semester 4', 'Semester 5', 'Semester 6','Semester 7', 'Semester 8'],
+    'EEE': ['Semester 1', 'Semester 2', 'Semester 3','Semester 4', 'Semester 5', 'Semester 6','Semester 7', 'Semester 8'],
+
+  };
 
   useEffect(() => {
     const checkUniqueUserName = async () => {
@@ -138,12 +153,14 @@ const doFirebaseUpdate = async () => {
     }
     const docRef = await addDoc(usersRef, {
       "userName": userName,
-      "semester": semester,
+      "semester": selectedSemester,
+      "department": selectedDepartment,
       "email": email,
-      "dp_url": imageURL, // Add image URL to Firestore
+      "dp_url": imageURL,
       "joiningDate": Timestamp.fromDate(new Date()),
       'birthday': birthDate,
-      "user_id": ''
+      "user_id": '',
+      "mobileNumber": mobileNumber
     });
     console.log("Document added to Firestore successfully");
     await updateDoc(doc(db, "users", docRef.id), { "user_id": docRef.id });
@@ -152,6 +169,8 @@ const doFirebaseUpdate = async () => {
     console.error("Error updating Firestore document:", e);
   }
 };
+
+
 
 
 //Email Verification
@@ -182,16 +201,15 @@ const doFirebaseUpdate = async () => {
   const onSignUpPress = async () => {
     if (email.length === 0 ||
       password.length === 0 ||
-      userName.length === 0 
-      //contactNumber.length === 0
+      userName.length === 0 ||
+      mobileNumber.length === 0
       ) {
       setErrorMessage("Please provide all the necessary information");
     } else if (email.length > 0 &&
       password.length > 0 &&
       confirmPassword.length > 0 &&
       userName.length > 0
-      //&&
-      //contactNumber.length > 0
+      && mobileNumber.length > 0
       ) {
       if (password === confirmPassword) registerWithEmail();
       else if (password !== confirmPassword) setErrorMessage("Passwords do not match");
@@ -210,6 +228,8 @@ const doFirebaseUpdate = async () => {
           <Text style={{ color: '#4b0082', fontSize: 16 }}>Pick Profile Picture</Text>
         </TouchableOpacity>
         {image && <Image source={{ uri: image }} style={styles.imagePreview} />}
+
+        {/* User Name input */}
         <TextInput
           style={styles.input}
           placeholderTextColor="#aaaaaa"
@@ -220,15 +240,41 @@ const doFirebaseUpdate = async () => {
         />
         {userNameErrorMessage[0].length > 0 && userName.length > 0 && <Text style={{ color: userNameErrorMessage[1], paddingLeft: 20, fontSize: 13 }}>{userNameErrorMessage[0]}</Text>}
 
-        <TextInput
-          style={styles.input}
-          placeholderTextColor="#aaaaaa"
-          placeholder='Semester'
-          onChangeText={(text) => setSemester(text)}
-          value={semester}
-          autoCapitalize="none"
-        />
 
+
+        {/* Department dropdown */}
+        <View style={styles.input}>
+          <Text style={styles.label}>Department:</Text>
+          <Picker
+            selectedValue={selectedDepartment}
+            onValueChange={(itemValue) => {
+              setSelectedDepartment(itemValue);
+              setSemesterOptions(semesterOptionsByDepartment[itemValue]);
+            }}
+            style={styles.picker}
+          >
+            <Picker.Item label="Select Department" value="" />
+            {departments.map((department, index) => (
+              <Picker.Item label={department} value={department} key={index} />
+            ))}
+          </Picker>
+        </View>
+
+        {/* Semester dropdown */}
+        {selectedDepartment && (
+          <View style={styles.input}>
+            <Text style={styles.label}>Semester:</Text>
+            <Picker
+              selectedValue={selectedSemester}
+              onValueChange={(itemValue) => setSelectedSemester(itemValue)}
+              style={styles.picker}
+            >
+              {semesterOptions.map((option, index) => (
+                <Picker.Item label={option} value={option} key={index} />
+              ))}
+            </Picker>
+          </View>
+        )}
 
         <TextInput
           style={styles.input}
@@ -238,15 +284,22 @@ const doFirebaseUpdate = async () => {
           value={email}
           autoCapitalize="none"
         />
-        {/* <TextInput
+        
+        {/* Mobile Number input */}
+        <TextInput
          style={styles.input}
-         placeholder='Contact Number'
          placeholderTextColor="#aaaaaa"
-         onChangeText={(text) => setContactNumber(text)}
-         value={contactNumber}
-         autoCapitalize="none"
-        /> */}
-
+         placeholder='Mobile Number'
+        onChangeText={(text) => {
+        // Ensure that only numbers are entered
+        const formattedText = text.replace(/[^0-9]/g, '');
+        setMobileNumber(formattedText);
+       }}
+        value={mobileNumber}
+        autoCapitalize="none"
+        keyboardType="numeric" 
+      />
+ 
 
         <TextInput
           style={styles.input}
@@ -353,7 +406,7 @@ const styles = StyleSheet.create({
     paddingLeft: 16
   },
   button: {
-    backgroundColor: '#32cd32',
+    backgroundColor: '#4b0082',
     padding: 15,
     borderRadius: 150,
     width: '100%',
@@ -362,8 +415,8 @@ const styles = StyleSheet.create({
     width: 350,
   },
   buttonTitle: {
-    color: '#4b0082',
-    fontSize: 25,
+    color: 'white',
+    fontSize: 20,
   },
   footerView: {
     marginTop: 20,
