@@ -90,7 +90,7 @@ const  ProfileUpdate = ({ navigation }) => {
   const handleUpdateProfile = async (navigation) => {
     console.log('Updating profile...');
     setLoading(true);
-
+  
     if (!isUserNameAvailable) {
       Alert.alert('Error', 'Username is already taken. Please choose a different one.');
       setLoading(false);
@@ -134,25 +134,23 @@ const  ProfileUpdate = ({ navigation }) => {
         setUserData(updatedUserData);
       }
   
-      // Fetch updated user data after profile update
-      const updatedUserSnapshot = await getDoc(userDocRef);
-      const updatedUserData = updatedUserSnapshot.data();
-      setUserData(updatedUserData);
-
-     // Update user name in the blogs collection
-      const blogsRef = collection(db, 'blogs');
-      const querySnapshot = await getDocs(query(blogsRef, where('userId', '==', userId))); // Filter blogs by userId
-       querySnapshot.forEach(async (blogDoc) => {
-    try {
-    const blogDocRef = doc(db, 'blogs', blogDoc.id); // Use blogDoc.id as the document ID
-    await updateDoc(blogDocRef, { userName: newName }); // Update userName in each blog
-  } catch (error) {
-    console.error('Error updating userName in blog:', error);
-  }
-});
-
-
-
+      // Update userName in other collections
+      const collectionsToUpdate = ['blogs', 'books', 'cart', 'ratings'];
+  
+      for (const collectionName of collectionsToUpdate) {
+        const collectionRef = collection(db, collectionName);
+        const querySnapshot = await getDocs(query(collectionRef, where('userId', '==', userId)));
+  
+        querySnapshot.forEach(async (doc) => {
+          try {
+            const docRef = doc(db, collectionName, doc.id);
+            await updateDoc(docRef, { userName: newName });
+            console.log(`UserName updated in ${collectionName}`);
+          } catch (error) {
+            console.error(`Error updating userName in ${collectionName}:`, error);
+          }
+        });
+      }
   
       // Alert the user about the successful profile update
       Alert.alert('Profile Updated', 'Your profile has been successfully updated!', [
@@ -171,6 +169,7 @@ const  ProfileUpdate = ({ navigation }) => {
       setLoading(false);
     }
   };
+  
   
   
   const handleLogout = () => {

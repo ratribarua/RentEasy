@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { collection, getDocs, doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from './firebaseConfig';
+import { FontAwesome } from '@expo/vector-icons';
 
 const ViewAllBooks = ({ route, navigation }) => {
   const [books, setBooks] = useState([]);
@@ -39,17 +40,22 @@ const ViewAllBooks = ({ route, navigation }) => {
     fetchCartBooks();
   }, [userName]);
 
-  // Function to handle adding a book to the cart
-  const addToCart = async (bookId) => {
-    try {
-      const updatedCartBooks = [...cartBooks, bookId];
-      await setDoc(doc(db, 'carts', userName), { books: updatedCartBooks });
-      setCartBooks(updatedCartBooks);
-      console.log('Book added to cart:', bookId);
-    } catch (error) {
-      console.error('Error adding book to cart:', error);
+// Function to handle adding a book to the cart
+const addToCart = async (bookId, bookOwner) => {
+  try {
+    if (bookOwner === userName) {
+      Alert.alert('Error', 'You cannot add your own book to the pocket.');
+      return;
     }
-  };
+    const updatedCartBooks = [...cartBooks, bookId];
+    await setDoc(doc(db, 'carts', userName), { books: updatedCartBooks });
+    setCartBooks(updatedCartBooks);
+    console.log('Book added to cart:', bookId);
+  } catch (error) {
+    console.error('Error adding book to cart:', error);
+  }
+};
+
 
   // Function to handle removing a book from the cart
   const removeFromCart = async (bookId) => {
@@ -73,14 +79,14 @@ const ViewAllBooks = ({ route, navigation }) => {
         <Text style={styles.bookContent}>Description: {item.content}</Text>
         {cartBooks.includes(item.id) ? (
           <TouchableOpacity style={styles.removeFromCartButton} onPress={() => removeFromCart(item.id)}>
-            <Text style={styles.removeFromCartButtonText}>Remove from Cart</Text>
+            <Text style={styles.removeFromCartButtonText}>Remove from Pocket</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
             style={styles.addToCartButton}
-            onPress={() => addToCart(item.id)}
+            onPress={() => addToCart(item.id, item.userName)}
           >
-            <Text style={styles.addToCartButtonText}>Add to Cart</Text>
+            <Text style={styles.addToCartButtonText}>Add to Pocket</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -90,24 +96,32 @@ const ViewAllBooks = ({ route, navigation }) => {
 
 // Navigate to the cart page
 const navigateToCart = () => {
-  navigation.navigate('ViewCart', { cartBooks });
+  navigation.navigate('ViewCart', { cartBooks ,userName});
 };
 
 
   return (
     <ScrollView contentContainerStyle={styles.scrollViewContent}>
-      <View style={styles.container}>
-        <Text style={styles.header}>All Books</Text>
-        <Text>Welcome, {userName}!</Text>
-        <FlatList
-          data={books}
-          renderItem={renderItem}
-          keyExtractor={item => item.id}
-        />
-        <TouchableOpacity style={styles.viewCartButton} onPress={navigateToCart}>
-          <Text style={styles.viewCartButtonText}>View Cart</Text>
-        </TouchableOpacity>
+    <View style={styles.container}>
+    <Text>Welcome, {userName}!</Text>
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+  <Text style={styles.header}>All Books</Text>
+  <TouchableOpacity onPress={navigateToCart} style={{ marginLeft: 230 }}>
+    <FontAwesome name="shopping-cart" size={40} color="#4b0082" />
+    {cartBooks.length > 0 && (
+      <View style={styles.cartItemCount}>
+        <Text style={styles.cartItemCountText}>{cartBooks.length}</Text>
       </View>
+    )}
+  </TouchableOpacity>
+</View>
+
+  <FlatList
+    data={books}
+    renderItem={renderItem}
+    keyExtractor={item => item.id}
+  />
+</View>
     </ScrollView>
   );
 };
@@ -127,6 +141,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
+    color: '#4b0082',
   },
   bookItem: {
     flexDirection: 'row',
@@ -186,17 +201,22 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
-  viewCartButton: {
-    backgroundColor: '#4b0082',
-    padding: 10,
-    borderRadius: 5,
-    alignSelf: 'center',
-    marginTop: 20,
+  cartItemCount: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: 'red',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 20,
+    minHeight: 20,
   },
-  viewCartButtonText: {
+  cartItemCountText: {
     color: 'white',
-    fontWeight: 'bold',
-  },
+    fontSize: 12,
+  }
+  
 });
 
 export default ViewAllBooks;

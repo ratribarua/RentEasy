@@ -118,7 +118,7 @@ export default function Login({navigation }) {
                     style={styles.checkbox}
                     status={isRememberMeChecked ? 'checked' : 'unchecked'}
                     onPress={() => {setIsRememberMeChecked(!isRememberMeChecked);}}
-                    color={isRememberMeChecked ? '#e80909' : undefined}
+                    color={isRememberMeChecked ? 'green' : undefined}
                 />
                 <Text onPress={() => {setIsRememberMeChecked(!isRememberMeChecked);}} style={styles.checkboxLabel}>Remember me</Text>
             </View>
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     },
     button: {
         backgroundColor: '#4b0082',
-        padding: 15,
+        padding: 13,
         borderRadius: 150,
         width: '100%',
         alignItems: 'center',

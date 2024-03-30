@@ -249,6 +249,9 @@ const navigateToViewAllBooks = (userName) => {
   navigation.navigate('ViewAllBooks', { userName: userName });
 };
 
+const navigateToMyBooks = (userName) => {
+  navigation.navigate('MyBooks', { userName: userName });
+};
 
 
   return (
@@ -315,8 +318,8 @@ const navigateToViewAllBooks = (userName) => {
                     case 'ViewAllBooks':
                       navigateToViewAllBooks(userData.userName);
                       break;
-                    case 'borrowed':
-                      // Handle borrowed action
+                    case 'MyBooks':
+                      navigateToMyBooks(userData.userName);
                       break;
                     case 'profileUpdate':
                       navigation.navigate('ProfileUpdate');
@@ -335,7 +338,7 @@ const navigateToViewAllBooks = (userName) => {
               >
                 <Picker.Item label="See More" value={null} style={{ fontSize: 20,padding: 150, color: "#9370db",  fontWeight:"bold"}} />
                 <Picker.Item label="All Books" value="ViewAllBooks" style={{ fontSize: 18,padding: 150, fontWeight:"bold"}}/>
-                <Picker.Item label="BADD" value="borrowed" style={{ fontSize: 18,padding: 150,  fontWeight:"bold"}} />
+                <Picker.Item label="My Books" value="MyBooks" style={{ fontSize: 18,padding: 150,  fontWeight:"bold"}} />
                 <Picker.Item label="Edit Profile" value="profileUpdate" style={{ fontSize: 18,padding: 150,   fontWeight:"bold"}} />
                 <Picker.Item label="See Blog" value="postScreen" style={{ fontSize: 18,padding: 150, fontWeight:"bold"}}/>
                 <Picker.Item label="Logout" value="logout" style={{ fontSize: 18,padding: 150,  fontWeight:"bold"}} />
