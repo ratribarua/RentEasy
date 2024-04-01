@@ -245,13 +245,14 @@ const handlePostBlog = async () => {
 
 
 // Function to navigate to ViewAllBooks page with userName
-const navigateToViewAllBooks = (userName) => {
-  navigation.navigate('ViewAllBooks', { userName: userName });
+const navigateToViewAllBooks = (userName,userId) => {
+  navigation.navigate('ViewAllBooks', { userName: userName, userId: userId });
 };
 
-const navigateToMyBooks = (userName) => {
-  navigation.navigate('MyBooks', { userName: userName });
+const navigateToMyBooks = (userName, userId) => {
+  navigation.navigate('MyBooks', { userName: userName, userId: userId });
 };
+
 
 
   return (
@@ -316,10 +317,10 @@ const navigateToMyBooks = (userName) => {
                 onValueChange={(itemValue, itemIndex) => {
                   switch (itemValue) {
                     case 'ViewAllBooks':
-                      navigateToViewAllBooks(userData.userName);
+                      navigateToViewAllBooks(userData.userName, userData.userRef);
                       break;
                     case 'MyBooks':
-                      navigateToMyBooks(userData.userName);
+                      navigateToMyBooks(userData.userName, userData.userRef);
                       break;
                     case 'profileUpdate':
                       navigation.navigate('ProfileUpdate');
@@ -355,7 +356,7 @@ const navigateToMyBooks = (userName) => {
                                 color="#4b0082"
                                 size={30}
                                 onPress={() => {
-            navigation.navigate('AddBooks', { userName: userData.userName });
+            navigation.navigate('AddBooks', { userName: userData.userName, userId: userData.userRef });
                                         }}
                           />
                 </View>
@@ -419,12 +420,13 @@ const navigateToMyBooks = (userName) => {
               </View>
             </Modal>
             <TouchableOpacity 
-                  style={[styles.addButton, !newBlogTitle && !newBlogContent && !image && styles.disabledButton]} 
-                  onPress={handlePostBlog} 
-                  disabled={!newBlogTitle && !newBlogContent && !image}
-            >
-            <Text style={styles.buttonText}>Upload Blog</Text>
-            </TouchableOpacity>
+  style={[styles.addButton, !newBlogTitle && !newBlogContent && !image && styles.disabledButton]} 
+  onPress={() => handlePostBlog(userData.userName, userData.userRef)} // Pass userName and userID to handlePostBlog
+  disabled={!newBlogTitle && !newBlogContent && !image}
+>
+  <Text style={styles.buttonText}>Upload Blog</Text>
+</TouchableOpacity>
+
 
                   </View>
                 </View>

@@ -5,70 +5,73 @@ import { db } from './firebaseConfig';
 import { FontAwesome } from '@expo/vector-icons';
 
 const ViewAllBooks = ({ route, navigation }) => {
-  const [books, setBooks] = useState([]);
-  const [cartBooks, setCartBooks] = useState([]);
-  const { userName } = route.params;
+  const [books, setBooks] = useState([]); // State to store all books
+  const [cartBooks, setCartBooks] = useState([]); // State to store books in the cart
+  const { userName, userId } = route.params; // Extracting user details from route params
 
+  // Fetch all books from Firestore
   useEffect(() => {
     const fetchBooks = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, 'books'));
-        const fetchedBooks = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setBooks(fetchedBooks);
+        const querySnapshot = await getDocs(collection(db, 'books')); // Querying Firestore collection
+        const fetchedBooks = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); // Mapping query results to an array
+        setBooks(fetchedBooks); // Setting fetched books to state
       } catch (error) {
-        console.error('Error fetching books:', error);
+        console.error('Error fetching books:', error); // Handling errors
       }
     };
 
-    fetchBooks();
+    fetchBooks(); // Invoking the fetchBooks function
   }, []);
 
+  // Fetch cart books for the current user from Firestore
   useEffect(() => {
     const fetchCartBooks = async () => {
       try {
-        const userDocRef = doc(db, 'carts', userName);
-        const userDocSnap = await getDoc(userDocRef);
+        const userDocRef = doc(db, 'carts', userId); // Reference to the user's cart document
+        const userDocSnap = await getDoc(userDocRef); // Fetching the cart document
         if (userDocSnap.exists()) {
-          const userData = userDocSnap.data();
-          setCartBooks(userData.books || []);
+          const userData = userDocSnap.data(); // Extracting cart data
+          setCartBooks(userData.books || []); // Setting cart books to state, or an empty array if no books are found
         }
       } catch (error) {
-        console.error('Error fetching cart books:', error);
+        console.error('Error fetching cart books:', error); // Handling errors
       }
     };
 
-    fetchCartBooks();
-  }, [userName]);
+    fetchCartBooks(); // Invoking the fetchCartBooks function
+  }, [userId]); // Dependency array to re-run effect when userId changes
 
-// Function to handle adding a book to the cart
-const addToCart = async (bookId, bookOwner) => {
-  try {
-    if (bookOwner === userName) {
-      Alert.alert('Error', 'You cannot add your own book to the pocket.');
-      return;
+  // Function to handle adding a book to the cart
+  const addToCart = async (bookId, bookOwner) => {
+    try {
+      // Check if the book owner is the same as the current user
+      if (bookOwner === userId) {
+        Alert.alert('Error', 'You cannot add your own book to the pocket.'); // Alert user if they try to add their own book
+        return;
+      }
+      const updatedCartBooks = [...cartBooks, bookId]; // Creating a new array with the added book
+      await setDoc(doc(db, 'carts', userId), { books: updatedCartBooks }); // Updating the cart document in Firestore
+      setCartBooks(updatedCartBooks); // Setting the updated cart books to state
+      console.log('Book added to cart:', bookId); // Logging success
+    } catch (error) {
+      console.error('Error adding book to cart:', error); // Handling errors
     }
-    const updatedCartBooks = [...cartBooks, bookId];
-    await setDoc(doc(db, 'carts', userName), { books: updatedCartBooks });
-    setCartBooks(updatedCartBooks);
-    console.log('Book added to cart:', bookId);
-  } catch (error) {
-    console.error('Error adding book to cart:', error);
-  }
-};
-
+  };
 
   // Function to handle removing a book from the cart
   const removeFromCart = async (bookId) => {
     try {
-      const updatedCartBooks = cartBooks.filter(id => id !== bookId);
-      await setDoc(doc(db, 'carts', userName), { books: updatedCartBooks });
-      setCartBooks(updatedCartBooks);
-      console.log('Book removed from cart:', bookId);
+      const updatedCartBooks = cartBooks.filter(id => id !== bookId); // Filtering out the removed book
+      await setDoc(doc(db, 'carts', userId), { books: updatedCartBooks }); // Updating the cart document in Firestore
+      setCartBooks(updatedCartBooks); // Setting the updated cart books to state
+      console.log('Book removed from cart:', bookId); // Logging success
     } catch (error) {
-      console.error('Error removing book from cart:', error);
+      console.error('Error removing book from cart:', error); // Handling errors
     }
   };
 
+  // Render each book item
   const renderItem = ({ item }) => (
     <View style={styles.bookItem}>
       <View style={styles.bookDetails}>
@@ -84,7 +87,7 @@ const addToCart = async (bookId, bookOwner) => {
         ) : (
           <TouchableOpacity
             style={styles.addToCartButton}
-            onPress={() => addToCart(item.id, item.userName)}
+            onPress={() => addToCart(item.id, item.userId)} // Pass book owner's userId
           >
             <Text style={styles.addToCartButtonText}>Add to Pocket</Text>
           </TouchableOpacity>
@@ -94,34 +97,33 @@ const addToCart = async (bookId, bookOwner) => {
     </View>
   );
 
-// Navigate to the cart page
-const navigateToCart = () => {
-  navigation.navigate('ViewCart', { cartBooks ,userName});
-};
-
+  // Navigate to the cart page
+  const navigateToCart = () => {
+    navigation.navigate('ViewCart', { cartBooks, userName });
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.scrollViewContent}>
-    <View style={styles.container}>
-    <Text>Welcome, {userName}!</Text>
-    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-  <Text style={styles.header}>All Books</Text>
-  <TouchableOpacity onPress={navigateToCart} style={{ marginLeft: 230 }}>
-    <FontAwesome name="shopping-cart" size={40} color="#4b0082" />
-    {cartBooks.length > 0 && (
-      <View style={styles.cartItemCount}>
-        <Text style={styles.cartItemCountText}>{cartBooks.length}</Text>
-      </View>
-    )}
-  </TouchableOpacity>
-</View>
+      <View style={styles.container}>
+        <Text>Welcome, {userName}!</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={styles.header}>All Books</Text>
+          <TouchableOpacity onPress={navigateToCart} style={{ marginLeft: 230 }}>
+            <FontAwesome name="shopping-cart" size={40} color="#4b0082" />
+            {cartBooks.length > 0 && (
+              <View style={styles.cartItemCount}>
+                <Text style={styles.cartItemCountText}>{cartBooks.length}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
 
-  <FlatList
-    data={books}
-    renderItem={renderItem}
-    keyExtractor={item => item.id}
-  />
-</View>
+        <FlatList
+          data={books}
+          renderItem={renderItem}
+          keyExtractor={item => item.id}
+        />
+      </View>
     </ScrollView>
   );
 };
@@ -172,11 +174,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   bookContent: {
-    //marginTop: 5,
     fontSize: 14,
   },
   bookUserName: {
-    color:"#4b0082",
+    color: "#4b0082",
     fontSize: 20,
   },
   addToCartButton: {
@@ -216,7 +217,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 12,
   }
-  
 });
 
 export default ViewAllBooks;

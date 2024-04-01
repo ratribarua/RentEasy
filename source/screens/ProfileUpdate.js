@@ -136,14 +136,14 @@ const  ProfileUpdate = ({ navigation }) => {
   
       // Update userName in other collections
       const collectionsToUpdate = ['blogs', 'books', 'cart', 'ratings'];
-  
+
       for (const collectionName of collectionsToUpdate) {
         const collectionRef = collection(db, collectionName);
         const querySnapshot = await getDocs(query(collectionRef, where('userId', '==', userId)));
-  
-        querySnapshot.forEach(async (doc) => {
+      
+        querySnapshot.forEach(async (docSnapshot) => { // Change variable name to avoid conflict
           try {
-            const docRef = doc(db, collectionName, doc.id);
+            const docRef = doc(db, collectionName, docSnapshot.id); // Use doc function from the correct import
             await updateDoc(docRef, { userName: newName });
             console.log(`UserName updated in ${collectionName}`);
           } catch (error) {
@@ -151,6 +151,7 @@ const  ProfileUpdate = ({ navigation }) => {
           }
         });
       }
+      
   
       // Alert the user about the successful profile update
       Alert.alert('Profile Updated', 'Your profile has been successfully updated!', [

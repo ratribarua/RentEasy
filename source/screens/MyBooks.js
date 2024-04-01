@@ -4,13 +4,15 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 
 const MyBooks = ({ route }) => {
-  const { userName } = route.params;
+  const { userName, userId } = route.params;
+  console.log("Route Params:", route.params);
+
   const [userBooks, setUserBooks] = useState([]);
 
   useEffect(() => {
     const fetchUserBooks = async () => {
       try {
-        const q = query(collection(db, 'books'), where('userName', '==', userName));
+        const q = query(collection(db, 'books'), where('userId', '==', userId)); // Updated query to filter books by userId
         const querySnapshot = await getDocs(q);
         const userBooksData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setUserBooks(userBooksData);
@@ -20,7 +22,7 @@ const MyBooks = ({ route }) => {
     };
 
     fetchUserBooks();
-  }, [userName]);
+  }, [userId]);
 
   return (
     <View>

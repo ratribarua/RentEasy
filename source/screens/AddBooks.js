@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView, Modal, Image } from 'react-native';
-import { Avatar, Title, IconButton } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNavigation } from '@react-navigation/native';
 import { collection, addDoc } from 'firebase/firestore';
 import { auth, db } from './firebaseConfig';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -10,7 +8,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { Camera } from 'expo-camera';
 
 const AddBooks = ({ route }) => {
-  const { userName } = route.params;
+  const { userName ,userId} = route.params;
+  //console.log("Route Params:", route.params);
 
   const [newBookTitle, setNewBookTitle] = useState('');
   const [newBookAuthor, setNewBookAuthor] = useState('');
@@ -88,6 +87,7 @@ const AddBooks = ({ route }) => {
         content: newBookContent,
         imageURL: imageURL,
         userName: userName,
+        userId: userId,
       };
 
       const booksRef = collection(db, 'books');
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
   imagePreview: {
     width: '100%',
     height: 200,
-    resizeMode: 'cover',
+    resizeMode: 'contain',
     marginBottom: 10,
   },
   cameraButtonContainer: {

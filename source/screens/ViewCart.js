@@ -5,6 +5,7 @@ import { db } from './firebaseConfig';
 
 const ViewCart = ({ route }) => {
   const { cartBooks, userName } = route.params;
+  console.log("Route Params:", route.params);
   const [cartBookDetails, setCartBookDetails] = useState([]);
 
   useEffect(() => {
