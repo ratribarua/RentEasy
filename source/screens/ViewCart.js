@@ -41,7 +41,7 @@ const ViewCart = ({ route }) => {
       <Text style={styles.bookAuthor}>Author: {item.author}</Text>
       <Text style={styles.bookEdition}>Edition: {item.edition}</Text>
       <TouchableOpacity style={styles.buyNowButton} onPress={() => handleBuyNow(item.id)}>
-        <Text style={styles.buyNowButtonText}>Buy Now</Text>
+        <Text style={styles.buyNowButtonText}>Rent Now</Text>
       </TouchableOpacity>
       <Text style={styles.bookOwner}>Owner: {item.userName}</Text>
     </View>
