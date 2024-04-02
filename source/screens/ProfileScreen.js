@@ -295,7 +295,7 @@ const ProfileScreen = () => {
                         </View>
                         <View style={styles.bellIconContainer}>
                             <View style={styles.bellIconRow}>
-                                <TouchableOpacity>
+                                <TouchableOpacity onPress={() => navigation.navigate('Notification')}>
                                     <Icon name="bell" color="#6495ed" size={25} style={styles.bellIcon} />
                                 </TouchableOpacity>
                             </View>
@@ -332,7 +332,6 @@ const ProfileScreen = () => {
                                 <Picker.Item label="My Books" value="MyBooks" style={{ fontSize: 18, padding: 150, fontWeight: "bold" }} />
                                 <Picker.Item label="See Blog" value="postScreen" style={{ fontSize: 18, padding: 150, fontWeight: "bold" }} />
                                 <Picker.Item label="Edit Profile" value="profileUpdate" style={{ fontSize: 18, padding: 150, fontWeight: "bold" }} />
-
                                 <Picker.Item label="Logout" value="logout" style={{ fontSize: 18, padding: 150, fontWeight: "bold" }} />
 
 

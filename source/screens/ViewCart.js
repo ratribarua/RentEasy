@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from './firebaseConfig';
+import RentOptionsModal from './RentOptionsModal';
 
 const ViewCart = ({ route }) => {
   const { cartBooks, userName } = route.params;
-  console.log("Route Params:", route.params);
   const [cartBookDetails, setCartBookDetails] = useState([]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedBookId, setSelectedBookId] = useState(null);
+  const [bookSelectedDates, setBookSelectedDates] = useState({});
 
   useEffect(() => {
     const fetchCartBookDetails = async () => {
@@ -30,9 +33,16 @@ const ViewCart = ({ route }) => {
     fetchCartBookDetails();
   }, [cartBooks]);
 
-  const handleBuyNow = (bookId) => {
-    // Implement your buy now logic here
-    console.log('Buy Now clicked for book:', bookId);
+  const handleRentNow = (bookId) => {
+    setSelectedBookId(bookId);
+    setIsModalVisible(true);
+  };
+
+  const handleDateChange = (bookId, selectedDate) => {
+    setBookSelectedDates(prevState => ({
+      ...prevState,
+      [bookId]: selectedDate,
+    }));
   };
 
   const renderItem = ({ item }) => (
@@ -40,16 +50,25 @@ const ViewCart = ({ route }) => {
       <Text style={styles.bookTitle}>Title: {item.title}</Text>
       <Text style={styles.bookAuthor}>Author: {item.author}</Text>
       <Text style={styles.bookEdition}>Edition: {item.edition}</Text>
-      <TouchableOpacity style={styles.buyNowButton} onPress={() => handleBuyNow(item.id)}>
+      <TouchableOpacity style={styles.buyNowButton} onPress={() => handleRentNow(item.id)}>
         <Text style={styles.buyNowButtonText}>Rent Now</Text>
       </TouchableOpacity>
       <Text style={styles.bookOwner}>Owner: {item.userName}</Text>
+      {bookSelectedDates[item.id] && (
+        <Text style={styles.selectedDateText}>Selected Date: {bookSelectedDates[item.id].toDateString()}</Text>
+      )}
+      <RentOptionsModal
+        visible={isModalVisible && selectedBookId === item.id}
+        bookId={item.id}
+        onClose={() => setIsModalVisible(false)}
+        onDateChange={(date) => handleDateChange(item.id, date)}
+      />
     </View>
   );
 
   return (
     <View style={styles.container}>
-    <Text>Welcome, {userName}!</Text>
+      <Text>Welcome, {userName}!</Text>
       <Text style={styles.header}>Added Books</Text>
       {cartBookDetails.length > 0 ? (
         <FlatList
@@ -106,6 +125,10 @@ const styles = StyleSheet.create({
   buyNowButtonText: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  selectedDateText: {
+    fontSize: 16,
+    marginBottom: 10,
   },
 });
 

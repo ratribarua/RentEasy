@@ -25,6 +25,8 @@ import AddBooks from './source/screens/AddBooks';
 import ViewAllBooks from './source/screens/ViewAllBooks';
 import ViewCart from './source/screens/ViewCart';
 import MyBooks from './source/screens/MyBooks';
+import Notification from './source/screens/Notification';
+import RentOptionsModal from './source/screens/RentOptionsModal';
 
 
 
@@ -91,6 +93,8 @@ const StackNav =() =>{
       <Stack.Screen name="ViewAllBooks" component={ViewAllBooks} />
       <Stack.Screen name="ViewCart" component={ViewCart} />
       <Stack.Screen name="MyBooks" component={MyBooks} />
+      <Stack.Screen name="Notification" component={Notification} />
+      <Stack.Screen name="RentOptionsModal" component={RentOptionsModal} />
       
     </Stack.Navigator>
   )
