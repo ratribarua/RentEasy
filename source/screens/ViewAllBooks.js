@@ -1,55 +1,70 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, ScrollView , Alert } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, ScrollView, Alert, Modal, TextInput } from 'react-native';
 import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 import { FontAwesome } from '@expo/vector-icons';
 
 const ViewAllBooks = ({ route }) => {
-  const [books, setBooks] = useState([]); // State to store all books
-  const { userName, userId } = route.params; // Extracting user details from route params
+  const [books, setBooks] = useState([]);
+  const [popupVisible, setPopupVisible] = useState(false);
+  const [selectedBook, setSelectedBook] = useState(null);
+  const [rentalDetails, setRentalDetails] = useState({ date: '', location: '' });
+  const { userName, userId } = route.params;
 
-  // Fetch all books from Firestore
   useEffect(() => {
     const fetchBooks = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, 'books')); // Querying Firestore collection
-        const fetchedBooks = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), rented: false })); // Mapping query results to an array and adding 'rented' flag
-        setBooks(fetchedBooks); // Setting fetched books to state
+        const querySnapshot = await getDocs(collection(db, 'books'));
+        const fetchedBooks = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), rented: false }));
+        setBooks(fetchedBooks);
       } catch (error) {
-        console.error('Error fetching books:', error); // Handling errors
+        console.error('Error fetching books:', error);
       }
     };
 
-    fetchBooks(); // Invoking the fetchBooks function
+    fetchBooks();
   }, []);
 
-
+  const toggleRent = async (bookId, rented, ownerId) => {
+    try {
+      if (ownerId === userId) {
+        Alert.alert('Error', 'You cannot rent your own book.');
+        return;
+      }
   
-  // Function to handle renting or removing a book
-const toggleRent = async (bookId, rented, ownerId) => {
-  try {
-    // Check if the current user is the owner of the book
-    if (ownerId === userId) {
-      Alert.alert('Error', 'You cannot rent your own book.'); // Show alert message
-      return;
+      setSelectedBook(bookId);
+  
+      if (rented) {
+        // If already rented, remove the rental details and set rented to false
+        const updatedBooks = books.map(book =>
+          book.id === bookId ? { ...book, rented: false } : book
+        );
+        setBooks(updatedBooks);
+        await setDoc(doc(db, 'books', bookId), { rented: false }, { merge: true });
+      } else {
+        // If not rented, show the popup
+        setPopupVisible(true);
+      }
+    } catch (error) {
+      console.error('Error toggling book rental status:', error);
     }
+  };
+  
+  
 
-    console.log(`${rented ? 'Removing' : 'Renting'} book with ID: ${bookId}`); // Log the action and book ID
-    const updatedBooks = books.map(book =>
-      book.id === bookId ? { ...book, rented: !rented } : book
-    ); // Toggle the 'rented' flag for the selected book
-    setBooks(updatedBooks); // Update the books state
+  const handleRent = async () => {
+    try {
+      const updatedBooks = books.map(book =>
+        book.id === selectedBook ? { ...book, rented: true } : book
+      );
+      setBooks(updatedBooks);
+      await setDoc(doc(db, 'books', selectedBook), { rented: true }, { merge: true });
+      setPopupVisible(false);
+    } catch (error) {
+      console.error('Error toggling book rental status:', error);
+    }
+  };
 
-    // Update the Firestore document with the new 'rented' status
-    await setDoc(doc(db, 'books', bookId), { rented: !rented }, { merge: true });
-  } catch (error) {
-    console.error('Error toggling book rental status:', error); // Handling errors
-  }
-};
-
-
-
-  // Render each book item
   const renderItem = ({ item }) => (
     <View style={styles.bookItem}>
       <View style={styles.bookDetails}>
@@ -60,7 +75,7 @@ const toggleRent = async (bookId, rented, ownerId) => {
         <Text style={styles.bookContent}>Description: {item.content}</Text>
         <TouchableOpacity
           style={[styles.rentButton, item.rented ? styles.removeButton : null]}
-          onPress={() => toggleRent(item.id, item.rented,item.userId)}
+          onPress={() => toggleRent(item.id, item.rented, item.userId)}
         >
           <Text style={styles.rentButtonText}>{item.rented ? 'Remove' : 'Rent Now'}</Text>
         </TouchableOpacity>
@@ -82,6 +97,39 @@ const toggleRent = async (bookId, rented, ownerId) => {
           renderItem={renderItem}
           keyExtractor={item => item.id}
         />
+
+        <Modal
+          visible={popupVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setPopupVisible(false)}
+        >
+          <View style={styles.popupContainer}>
+            <View style={styles.popup}>
+              <Text>Add Date and Location</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Date"
+                value={rentalDetails.date}
+                onChangeText={text => setRentalDetails({ ...rentalDetails, date: text })}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Location"
+                value={rentalDetails.location}
+                onChangeText={text => setRentalDetails({ ...rentalDetails, location: text })}
+              />
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity style={styles.popupButton} onPress={() => handleRent()}>
+                  <Text style={styles.buttonText}>Enter</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.popupButton} onPress={() => setPopupVisible(false)}>
+                  <Text style={styles.buttonText}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </ScrollView>
   );
@@ -153,7 +201,40 @@ const styles = StyleSheet.create({
   removeButton: {
     backgroundColor: '#00bfff', // Change to your desired color for the remove button
   },
-  
+  popupContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  popup: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    elevation: 5,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  popupButton: {
+    backgroundColor: '#4b0082',
+    padding: 10,
+    borderRadius: 5,
+    width: '45%',
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
 });
 
 export default ViewAllBooks;
