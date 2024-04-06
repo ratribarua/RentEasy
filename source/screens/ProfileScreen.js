@@ -237,6 +237,10 @@ const ProfileScreen = () => {
     const navigateToMyBooks = (userName, userId) => {
         navigation.navigate('MyBooks', { userName: userName, userId: userId });
     };
+    const navigateToNotification = (userName, userId) => {
+        navigation.navigate('Notification', { userName: userName, userId: userId });
+    };
+    
 
     return (
         <SafeAreaView style={styles.container}>
@@ -293,13 +297,7 @@ const ProfileScreen = () => {
                                 <Text style={{ marginLeft: 20, color: '#00008b', fontSize: 18, backgroundColor: "#dcdcdc" }}>{userData?.email}</Text>
                             </View>
                         </View>
-                        <View style={styles.bellIconContainer}>
-                            <View style={styles.bellIconRow}>
-                                <TouchableOpacity onPress={() => navigation.navigate('Notification')}>
-                                    <Icon name="bell" color="#6495ed" size={25} style={styles.bellIcon} />
-                                </TouchableOpacity>
-                            </View>
-                        </View>
+
 
                         <View>
                             <Picker
@@ -321,6 +319,9 @@ const ProfileScreen = () => {
                                         case 'postScreen':
                                             navigation.navigate('BlogScreen');
                                             break;
+                                        case 'Notification': // Handle the selection of the notification option
+                                            navigateToNotification(userData.userName, userData.userRef);
+                                             break;
                                         default:
                                             break;
                                     }
@@ -330,6 +331,7 @@ const ProfileScreen = () => {
                                 <Picker.Item label="See More" value={null} style={{ fontSize: 20, padding: 150, color: "#9370db", fontWeight: "bold" }} />
                                 <Picker.Item label="All Books" value="ViewAllBooks" style={{ fontSize: 18, padding: 150, fontWeight: "bold" }} />
                                 <Picker.Item label="My Books" value="MyBooks" style={{ fontSize: 18, padding: 150, fontWeight: "bold" }} />
+                                <Picker.Item label="Notifications" value="Notification" style={{ fontSize: 18, padding: 150, fontWeight: "bold" }} />
                                 <Picker.Item label="See Blog" value="postScreen" style={{ fontSize: 18, padding: 150, fontWeight: "bold" }} />
                                 <Picker.Item label="Edit Profile" value="profileUpdate" style={{ fontSize: 18, padding: 150, fontWeight: "bold" }} />
                                 <Picker.Item label="Logout" value="logout" style={{ fontSize: 18, padding: 150, fontWeight: "bold" }} />

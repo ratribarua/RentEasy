@@ -1,18 +1,19 @@
-import { StyleSheet, Text, View, FlatList } from 'react-native';
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { View, Text, FlatList, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import { collection, getDocs, doc, setDoc, deleteDoc, query, where, orderBy } from 'firebase/firestore';
 import { db } from './firebaseConfig';
+import { FontAwesome } from '@expo/vector-icons'; // Assuming FontAwesome is already imported
 
 const MyBooks = ({ route }) => {
   const { userName, userId } = route.params;
-  console.log("Route Params:", route.params);
 
   const [userBooks, setUserBooks] = useState([]);
+
 
   useEffect(() => {
     const fetchUserBooks = async () => {
       try {
-        const q = query(collection(db, 'books'), where('userId', '==', userId)); // Updated query to filter books by userId
+        const q = query(collection(db, 'books'), where('userId', '==', userId));
         const querySnapshot = await getDocs(q);
         const userBooksData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setUserBooks(userBooksData);
@@ -20,9 +21,9 @@ const MyBooks = ({ route }) => {
         console.error('Error fetching user books:', error);
       }
     };
-
     fetchUserBooks();
   }, [userId]);
+
 
   return (
     <View>
@@ -43,6 +44,23 @@ const MyBooks = ({ route }) => {
   );
 };
 
-export default MyBooks;
+const styles = StyleSheet.create({
+  notificationItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginVertical: 5,
+  },
+  notificationText: {
+    flex: 1,
+  },
+  deleteButton: {
+    marginLeft: 10,
+  },
+});
 
-const styles = StyleSheet.create({});
+export default MyBooks;

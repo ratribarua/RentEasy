@@ -1,22 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, ScrollView, Alert, Modal, TextInput } from 'react-native';
-import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
+import { View, Text, FlatList, StyleSheet, Image, ScrollView, TouchableOpacity, Alert, TextInput } from 'react-native';
+import { collection, getDocs, addDoc, query, where, getFirestore } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
 import { db } from './firebaseConfig';
-import { FontAwesome } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+
+const firestore = getFirestore();
 
 const ViewAllBooks = ({ route }) => {
-  const [books, setBooks] = useState([]);
-  const [popupVisible, setPopupVisible] = useState(false);
-  const [selectedBook, setSelectedBook] = useState(null);
-  const [rentalDetails, setRentalDetails] = useState({ date: '', location: '' });
   const { userName, userId } = route.params;
+
+  const [books, setBooks] = useState([]);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [rentLocation, setRentLocation] = useState('');
+  const [rentRequestSent, setRentRequestSent] = useState({});
 
   useEffect(() => {
     const fetchBooks = async () => {
       try {
         const querySnapshot = await getDocs(collection(db, 'books'));
-        const fetchedBooks = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), rented: false }));
+        const fetchedBooks = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ownerId: doc.data().userId, // Fetching owner ID
+          ...doc.data()
+        }));
         setBooks(fetchedBooks);
+        initializeRentRequestStatus(fetchedBooks);
+        fetchSentRequests();
       } catch (error) {
         console.error('Error fetching books:', error);
       }
@@ -25,62 +36,124 @@ const ViewAllBooks = ({ route }) => {
     fetchBooks();
   }, []);
 
-  const toggleRent = async (bookId, rented, ownerId) => {
+  const initializeRentRequestStatus = (fetchedBooks) => {
+    const initialRentRequestStatus = {};
+    fetchedBooks.forEach(book => {
+      initialRentRequestStatus[book.id] = false;
+    });
+    setRentRequestSent(initialRentRequestStatus);
+  };
+
+  const updateRentRequestStatus = (bookId, status) => {
+    setRentRequestSent(prevState => ({
+      ...prevState,
+      [bookId]: status
+    }));
+  };
+
+  const fetchSentRequests = async () => {
     try {
-      if (ownerId === userId) {
-        Alert.alert('Error', 'You cannot rent your own book.');
-        return;
-      }
-  
-      setSelectedBook(bookId);
-  
-      if (rented) {
-        // If already rented, remove the rental details and set rented to false
-        const updatedBooks = books.map(book =>
-          book.id === bookId ? { ...book, rented: false } : book
-        );
-        setBooks(updatedBooks);
-        await setDoc(doc(db, 'books', bookId), { rented: false }, { merge: true });
-      } else {
-        // If not rented, show the popup
-        setPopupVisible(true);
+      const storedSentRequests = await AsyncStorage.getItem('sentRequests'); // Fetch sent requests from AsyncStorage
+      if (storedSentRequests) {
+        setRentRequestSent(JSON.parse(storedSentRequests));
       }
     } catch (error) {
-      console.error('Error toggling book rental status:', error);
+      console.error('Error fetching sent requests:', error);
     }
   };
-  
-  
 
-  const handleRent = async () => {
+  const storeSentRequests = async (sentRequests) => {
     try {
-      const updatedBooks = books.map(book =>
-        book.id === selectedBook ? { ...book, rented: true } : book
-      );
-      setBooks(updatedBooks);
-      await setDoc(doc(db, 'books', selectedBook), { rented: true }, { merge: true });
-      setPopupVisible(false);
+      await AsyncStorage.setItem('sentRequests', JSON.stringify(sentRequests)); // Store sent requests in AsyncStorage
     } catch (error) {
-      console.error('Error toggling book rental status:', error);
+      console.error('Error storing sent requests:', error);
     }
+  };
+
+  const handleRentRequest = async (book) => {
+    try {
+      await addDoc(collection(db, 'notifications'), {
+        senderName: userName,
+        senderId: userId,
+        location: rentLocation,
+        rentDuration: selectedDate,
+        bookTitle: book.title,
+        ownerId: book.ownerId,
+        status: 'pending',
+      });
+      console.log('Rent request sent successfully');
+      Alert.alert('Rent Request Sent', `Rent request sent successfully to ${book.ownerId} (${book.userName})`);
+      updateRentRequestStatus(book.id, true); // Update rent request status to true for this book
+      storeSentRequests({ ...rentRequestSent, [book.id]: true }); // Update AsyncStorage with new sent request
+    } catch (error) {
+      console.error('Error sending rent request:', error);
+    }
+  };
+
+  const renderDatePicker = (bookId, ownerId) => {
+    if (showDatePicker && ownerId !== userId) {
+      return (
+        <View>
+          <DateTimePicker
+            value={selectedDate}
+            mode="date"
+            display="default"
+            minimumDate={new Date()} // Set minimum date to today
+            onChange={(event, date) => {
+              setShowDatePicker(false);
+              if (date) setSelectedDate(date);
+            }}
+          />
+          <Text style={styles.selectedDateText}>Selected Date: {selectedDate.toLocaleDateString()}</Text>
+        </View>
+      );
+    }
+  };
+
+  const handleLocationChange = (location) => {
+    setRentLocation(location);
+  };
+
+  const isRentButtonDisabled = (book) => {
+    return !(rentLocation && selectedDate);
   };
 
   const renderItem = ({ item }) => (
     <View style={styles.bookItem}>
+      <Image source={{ uri: item.imageURL }} style={styles.bookImage} />
       <View style={styles.bookDetails}>
         <Text style={styles.bookUserName}>Added By: {item.userName}</Text>
         <Text style={styles.bookTitle}>{item.title}</Text>
         <Text style={styles.bookAuthor}>Author: {item.author}</Text>
         <Text style={styles.bookEdition}>Edition: {item.edition}</Text>
         <Text style={styles.bookContent}>Description: {item.content}</Text>
-        <TouchableOpacity
-          style={[styles.rentButton, item.rented ? styles.removeButton : null]}
-          onPress={() => toggleRent(item.id, item.rented, item.userId)}
-        >
-          <Text style={styles.rentButtonText}>{item.rented ? 'Remove' : 'Rent Now'}</Text>
-        </TouchableOpacity>
+        {item.ownerId !== userId ? (
+          <>
+            <TextInput
+              style={styles.locationInput}
+              placeholder="Enter Location"
+              value={rentLocation}
+              onChangeText={handleLocationChange}
+            />
+            <TouchableOpacity style={styles.datePickerButton} onPress={() => setShowDatePicker(true)}>
+              <Text style={styles.buttonText}>Select Date</Text>
+            </TouchableOpacity>
+            {renderDatePicker(item.id, item.ownerId)}
+            <TouchableOpacity
+              style={[
+                styles.rentButton,
+                isRentButtonDisabled(item) || rentRequestSent[item.id] ? styles.disabledButton : null
+              ]}
+              onPress={() => handleRentRequest(item)}
+              disabled={isRentButtonDisabled(item) || rentRequestSent[item.id]}
+            >
+              <Text style={styles.rentButtonText}>{rentRequestSent[item.id] ? "Sent" : "Rent Request"}</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <Text style={styles.ownedBookText}>You Own This Book</Text>
+        )}
       </View>
-      <Image source={{ uri: item.imageURL }} style={styles.bookImage} />
     </View>
   );
 
@@ -91,45 +164,28 @@ const ViewAllBooks = ({ route }) => {
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Text style={styles.header}>All Books</Text>
         </View>
-
         <FlatList
           data={books}
           renderItem={renderItem}
           keyExtractor={item => item.id}
         />
-
-        <Modal
-          visible={popupVisible}
-          animationType="slide"
-          transparent={true}
-          onRequestClose={() => setPopupVisible(false)}
-        >
-          <View style={styles.popupContainer}>
-            <View style={styles.popup}>
-              <Text>Add Date and Location</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Date"
-                value={rentalDetails.date}
-                onChangeText={text => setRentalDetails({ ...rentalDetails, date: text })}
+        <View>
+          {showDatePicker && (
+            <View>
+              <DateTimePicker
+                value={selectedDate}
+                mode="date"
+                display="default"
+                minimumDate={new Date()} // Set minimum date to today
+                onChange={(event, date) => {
+                  setShowDatePicker(false);
+                  if (date) setSelectedDate(date);
+                }}
               />
-              <TextInput
-                style={styles.input}
-                placeholder="Location"
-                value={rentalDetails.location}
-                onChangeText={text => setRentalDetails({ ...rentalDetails, location: text })}
-              />
-              <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.popupButton} onPress={() => handleRent()}>
-                  <Text style={styles.buttonText}>Enter</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.popupButton} onPress={() => setPopupVisible(false)}>
-                  <Text style={styles.buttonText}>Close</Text>
-                </TouchableOpacity>
-              </View>
+              <Text style={styles.selectedDateText}>Selected Date: {selectedDate.toLocaleDateString()}</Text>
             </View>
-          </View>
-        </Modal>
+          )}
+        </View>
       </View>
     </ScrollView>
   );
@@ -165,8 +221,8 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   bookImage: {
-    width: 100,
-    height: 150,
+    width: 120,
+    height: 200,
     resizeMode: 'cover',
     borderRadius: 8,
   },
@@ -189,51 +245,53 @@ const styles = StyleSheet.create({
   },
   rentButton: {
     backgroundColor: '#4b0082',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 5,
-    alignSelf: 'flex-end',
+    marginTop: 10,
   },
   rentButtonText: {
-    color: 'white',
+    color: '#fff',
     fontWeight: 'bold',
+    textAlign: 'center',
   },
-  removeButton: {
-    backgroundColor: '#00bfff', // Change to your desired color for the remove button
-  },
-  popupContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  popup: {
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 10,
-    elevation: 5,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  popupButton: {
+  datePickerButton: {
     backgroundColor: '#4b0082',
-    padding: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 5,
-    width: '45%',
-    alignItems: 'center',
+    marginTop: 10,
   },
   buttonText: {
-    color: 'white',
+    color: '#fff',
     fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  locationInput: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    borderRadius: 5,
+    marginTop: 10,
+    paddingHorizontal: 10,
+  },
+  ownedBookText: {
+    fontSize: 16,
+    color: 'gray',
+    marginTop: 10,
+  },
+  disabledButton: {
+    backgroundColor: '#ccc',
+  },
+  selectedDateText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#4b0082',
+  },
+  divider: {
+    borderBottomColor: '#ccc',
+    borderBottomWidth: 1,
+    marginBottom: 10,
   },
 });
 
