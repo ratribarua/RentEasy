@@ -10,6 +10,8 @@ const DrawerList = [
   { icon: 'login', label: 'Login', navigateTo: 'Login' },
   { icon: 'open-in-new', label: 'Signup', navigateTo: 'Signup' },
   { icon: 'emoticon-excited-outline', label: 'Know Me', navigateTo: 'VideoPlaying' },
+  { icon: 'camera', label: 'Camera', navigateTo: 'CameraSearch' },
+
 ];
 
 // Component for each drawer item

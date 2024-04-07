@@ -15,7 +15,6 @@ import DrawerContent from './source/screens/DrawerContent';
 
 import RatingScreen from './source/screens/RatingScreen';
 import ProfileScreen from './source/screens/ProfileScreen';
-import PostScreen from './source/screens/PostScreen';
 import ProfileUpdate from './source/screens/ProfileUpdate';
 import SearchScreen from './source/screens/SearchScreen';
 import VideoPlaying from './source/screens/VideoPlaying';
@@ -27,6 +26,7 @@ import ViewCart from './source/screens/ViewCart';
 import MyBooks from './source/screens/MyBooks';
 import Notification from './source/screens/Notification';
 import RentOptionsModal from './source/screens/RentOptionsModal';
+import CameraSearch from './source/screens/CameraSearch';
 
 
 
@@ -83,7 +83,6 @@ const StackNav =() =>{
       <Stack.Screen name="Signup" component={Signup} />
       <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
       <Stack.Screen name="RatingScreen" component={RatingScreen} />
-      <Stack.Screen name="PostScreen" component={PostScreen} />
       <Stack.Screen name="ProfileUpdate" component={ProfileUpdate} />
       <Stack.Screen name="SearchScreen" component={SearchScreen} />
       <Stack.Screen name="VideoPlaying" component={VideoPlaying} />
@@ -95,6 +94,7 @@ const StackNav =() =>{
       <Stack.Screen name="MyBooks" component={MyBooks} />
       <Stack.Screen name="Notification" component={Notification} />
       <Stack.Screen name="RentOptionsModal" component={RentOptionsModal} />
+      <Stack.Screen name="CameraSearch" component={CameraSearch} />
       
     </Stack.Navigator>
   )

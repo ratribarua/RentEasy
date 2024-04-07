@@ -12,6 +12,14 @@ import { Camera } from 'expo-camera';
 import { Picker } from '@react-native-picker/picker';
 
 const ProfileScreen = () => {
+
+    const [newNotifications, setNewNotifications] = useState(0);
+    // Example: Update newNotifications when a new notification is received
+const handleNewNotification = () => {
+    setNewNotifications(prevCount => prevCount + 1);
+};
+
+
     //get user info states
     const [userData, setUserData] = useState(null);
     const navigation = useNavigation();
@@ -296,8 +304,20 @@ const ProfileScreen = () => {
                                 <Icon name="google" color="#6495ed" size={25} />
                                 <Text style={{ marginLeft: 20, color: '#00008b', fontSize: 18, backgroundColor: "#dcdcdc" }}>{userData?.email}</Text>
                             </View>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <IconButton
+                                icon="bell"
+                                color="#4b0082"
+                                size={25}
+                                onPress={() => navigateToNotification(userData.userName, userData.userRef)} // Navigate to the notification screen when bell icon is pressed
+                            />{newNotifications > 0 && (
+        <View style={styles.notificationBadge}>
+            <Text style={styles.notificationText}>{newNotifications}</Text>
+        </View>
+    )}
+                            <Text style={{ marginLeft: 10, color: '#00008b', fontSize: 18 }}>Notifications</Text>
+                            </View>
                         </View>
-
 
                         <View>
                             <Picker
@@ -620,6 +640,19 @@ const styles = StyleSheet.create({
     bellIcon: {
         marginRight: 10,
     },
+    notificationBadge: {
+        backgroundColor: 'red',
+        borderRadius: 10,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        marginLeft: -10, // Adjust this value based on the position you want the badge to be
+    },
+    notificationText: {
+        color: 'white',
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    
 
 });
 
