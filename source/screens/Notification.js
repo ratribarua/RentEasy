@@ -20,6 +20,16 @@ const NotificationItem = ({ notification, onApprove, onCancelApproval, showButto
         ownerPhoneNumber: phoneNumber.trim(), // Store the owner's phone number
       });
 
+      // Fetch other notifications for the same book
+      const otherNotifications = notifications.filter(otherNotification => otherNotification.id !== notification.id && otherNotification.bookId === notification.bookId);
+
+      // Update the status of other notifications to 'Book is not available'
+      for (const otherNotification of otherNotifications) {
+        await updateDoc(doc(db, 'notifications', otherNotification.id), {
+          status: 'Book is not available'
+        });
+      }
+
       // Perform action with phone number, e.g., send SMS
       console.log('Phone number:', phoneNumber);
 
@@ -54,9 +64,8 @@ const NotificationItem = ({ notification, onApprove, onCancelApproval, showButto
       <Text style={styles.notificationText}>Book Title: {notification.bookTitle}</Text>
       <Text style={styles.notificationText}>Location: {notification.location}</Text>
       {notification.rentDuration && (
-     <Text style={styles.notificationText}>Rent Duration: {new Date(notification.rentDuration.seconds * 1000).toLocaleDateString()}</Text>
+        <Text style={styles.notificationText}>Rent Duration: {new Date(notification.rentDuration.seconds * 1000).toLocaleDateString()}</Text>
       )}
-
 
       {showButton && notification.status === 'pending' && (
         <TouchableOpacity style={styles.approveButton} onPress={() => setShowInput(true)}>
@@ -144,15 +153,31 @@ const Notification = ({ route }) => {
     setFetchMode(prevMode => (prevMode === 'sending' ? 'receiving' : 'sending'));
   };
 
-  const handleApproveRequest = (notificationId) => {
-    // Update the local state to reflect the approved request
-    setNotifications(prevNotifications =>
-      prevNotifications.map(notification =>
-        notification.id === notificationId ? { ...notification, status: 'approved' } : notification
-      )
-    );
+  const handleApproveRequest = async (notificationId) => {
+    try {
+      // Update the local state to reflect the approved request
+      setNotifications(prevNotifications =>
+        prevNotifications.map(notification =>
+          notification.id === notificationId ? { ...notification, status: 'approved' } : notification
+        )
+      );
+  
+      // Fetch other notifications for the same book
+      const otherNotifications = notifications.filter(otherNotification => otherNotification.id !== notificationId && otherNotification.bookId === notifications.find(notification => notification.id === notificationId).bookId);
+  
+      // Update the status of other notifications to 'Book is not available'
+      for (const otherNotification of otherNotifications) {
+        await updateDoc(doc(db, 'notifications', otherNotification.id), {
+          status: 'Book is not available'
+        });
+      }
+  
+      console.log(`Status updated for other users who requested the same book`);
+    } catch (error) {
+      console.error('Error updating status for other users:', error);
+    }
   };
-
+  
   const handleCancelApproval = (notificationId) => {
     // Update the local state to reflect the canceled approval
     setNotifications(prevNotifications =>
@@ -218,7 +243,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     marginBottom: 10,
-    
   },
   notificationText: {
     fontSize: 18,
