@@ -1,18 +1,16 @@
-import * as React from 'react';
-import { NavigationContainer , useNavigation, DrawerActions} from '@react-navigation/native';
+// App.js
+import React from 'react';
+import { NavigationContainer, useNavigation, DrawerActions } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-//import Icon from 'react-native-vector-icons/Entypo';
-import {createDrawerNavigator} from '@react-navigation/drawer';
+import { createDrawerNavigator } from '@react-navigation/drawer';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
+import { ApolloProvider } from '@apollo/client';
+import client from './source/screens/apolloClient';
 
 import Signup from './source/screens/Signup';
 import Login from './source/screens/Login';
 import WelcomePage from './source/screens/WelcomePage';
-
 import DrawerContent from './source/screens/DrawerContent';
-
-
 import RatingScreen from './source/screens/RatingScreen';
 import ProfileScreen from './source/screens/ProfileScreen';
 import ProfileUpdate from './source/screens/ProfileUpdate';
@@ -28,34 +26,30 @@ import Notification from './source/screens/Notification';
 import RentOptionsModal from './source/screens/RentOptionsModal';
 import CameraSearch from './source/screens/CameraSearch';
 
-
-
-
-
-const StackNav =() =>{
+const StackNav = () => {
   const Stack = createNativeStackNavigator();
   const navigation = useNavigation();
-  return(
+  return (
     <Stack.Navigator initialRouteName='WelcomePage'
-    screenOptions={{
-      statusBarColor: 'white',
-      headerStyle: {
-        backgroundColor: '#00bfff',
-      },
-      headerTintColor: '#00bfff',
-      headerTitleAlign: 'center',
-      headerLeft: ()=> {
-        return (
-          <Icon
-          name="menu"
-          onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
-          size={30}
-          color="#fff"
-          />
-        );
-      },
-      headerRight: () => (
-        <React.Fragment>
+      screenOptions={{
+        statusBarColor: 'white',
+        headerStyle: {
+          backgroundColor: '#00bfff',
+        },
+        headerTintColor: '#00bfff',
+        headerTitleAlign: 'center',
+        headerLeft: () => {
+          return (
+            <Icon
+              name="menu"
+              onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+              size={30}
+              color="#fff"
+            />
+          );
+        },
+        headerRight: () => (
+          <React.Fragment>
             <Icon
               name="map-marker"
               onPress={() => {
@@ -95,29 +89,30 @@ const StackNav =() =>{
       <Stack.Screen name="Notification" component={Notification} />
       <Stack.Screen name="RentOptionsModal" component={RentOptionsModal} />
       <Stack.Screen name="CameraSearch" component={CameraSearch} />
-      
     </Stack.Navigator>
   )
 }
 
-const DrawerNav =() => {
+const DrawerNav = () => {
   const Drawer = createDrawerNavigator();
   return (
-      <Drawer.Navigator 
+    <Drawer.Navigator
       drawerContent={props => <DrawerContent {...props} />}
       screenOptions={{
         headerShown: false,
       }}>
-        <Drawer.Screen name = 'Welcome' component ={StackNav}/>
-      </Drawer.Navigator>
+      <Drawer.Screen name='Welcome' component={StackNav} />
+    </Drawer.Navigator>
   );
 };
 
 function App() {
   return (
-    <NavigationContainer>
-       <DrawerNav/>
-    </NavigationContainer>
+    <ApolloProvider client={client}>
+      <NavigationContainer>
+        <DrawerNav />
+      </NavigationContainer>
+    </ApolloProvider>
   );
 }
 
