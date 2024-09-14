@@ -1,34 +1,118 @@
-import React, { useState } from 'react';
-import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, Alert, TextInput } from 'react-native';
-import { useQuery } from '@apollo/client';
-import { GET_BOOKS } from './queries';
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, StyleSheet, Image, ScrollView, TouchableOpacity, Alert, TextInput } from 'react-native';
+import { collection, getDocs, addDoc, query, where, getFirestore } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
+import { db } from './firebaseConfig';
 import DateTimePicker from '@react-native-community/datetimepicker';
+
+const firestore = getFirestore();
 
 const ViewAllBooks = ({ route }) => {
   const { userName, userId } = route.params;
 
+  const [booksByMe, setBooksByMe] = useState([]);
+  const [booksByOthers, setBooksByOthers] = useState([]);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [rentLocation, setRentLocation] = useState('');
   const [rentRequestSent, setRentRequestSent] = useState({});
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
 
-  const { loading, error, data, refetch } = useQuery(GET_BOOKS, {
-    variables: { searchQuery }
-  });
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, 'books'));
+        const fetchedBooks = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ownerId: doc.data().userId, // Fetching owner ID
+          ...doc.data()
+        }));
 
-  if (loading) return <Text>Loading...</Text>;
-  if (error) return <Text>Error: {error.message}</Text>;
+        const booksAddedByMe = fetchedBooks.filter(book => book.ownerId === userId);
+        const booksAddedByOthers = fetchedBooks.filter(book => book.ownerId !== userId);
 
-  const books = data.books;
+        setBooksByMe(booksAddedByMe);
+        setBooksByOthers(booksAddedByOthers);
+        initializeRentRequestStatus(fetchedBooks);
+        fetchSentRequests();
+      } catch (error) {
+        console.error('Error fetching books:', error);
+      }
+    };
+
+    fetchBooks();
+  }, [userId]);
+
+  const initializeRentRequestStatus = (fetchedBooks) => {
+    const initialRentRequestStatus = {};
+    fetchedBooks.forEach(book => {
+      initialRentRequestStatus[book.id] = false;
+    });
+    setRentRequestSent(initialRentRequestStatus);
+  };
+
+  const updateRentRequestStatus = (bookId, status) => {
+    setRentRequestSent(prevState => ({
+      ...prevState,
+      [bookId]: status
+    }));
+  };
+
+  const fetchSentRequests = async () => {
+    try {
+      const storedSentRequests = await AsyncStorage.getItem('sentRequests'); // Fetch sent requests from AsyncStorage
+      if (storedSentRequests) {
+        setRentRequestSent(JSON.parse(storedSentRequests));
+      }
+    } catch (error) {
+      console.error('Error fetching sent requests:', error);
+    }
+  };
+
+  const storeSentRequests = async (sentRequests) => {
+    try {
+      await AsyncStorage.setItem('sentRequests', JSON.stringify(sentRequests)); // Store sent requests in AsyncStorage
+    } catch (error) {
+      console.error('Error storing sent requests:', error);
+    }
+  };
 
   const handleRentRequest = async (book) => {
     try {
-      // Simulate rent request handling
+      await addDoc(collection(db, 'notifications'), {
+        senderName: userName,
+        senderId: userId,
+        location: rentLocation,
+        rentDuration: selectedDate,
+        bookTitle: book.title,
+        ownerId: book.ownerId,
+        status: 'pending',
+      });
       console.log('Rent request sent successfully');
-      Alert.alert('Rent Request Sent', `Rent request sent successfully to ${book.ownerId} (${book.userName})`);
+      Alert.alert('Rent Request Sent', `Rent request sent successfully to ${book.ownerId}`);
+      updateRentRequestStatus(book.id, true); // Update rent request status to true for this book
+      storeSentRequests({ ...rentRequestSent, [book.id]: true }); // Update AsyncStorage with new sent request
     } catch (error) {
       console.error('Error sending rent request:', error);
+    }
+  };
+
+  const renderDatePicker = (bookId, ownerId) => {
+    if (showDatePicker && ownerId !== userId) {
+      return (
+        <View>
+          <DateTimePicker
+            value={selectedDate}
+            mode="date"
+            display="default"
+            minimumDate={new Date()} // Set minimum date to today
+            onChange={(event, date) => {
+              setShowDatePicker(false);
+              if (date) setSelectedDate(date);
+            }}
+          />
+          <Text style={styles.selectedDateText}>Selected Date: {selectedDate.toLocaleDateString()}</Text>
+        </View>
+      );
     }
   };
 
@@ -37,26 +121,10 @@ const ViewAllBooks = ({ route }) => {
   };
 
   const isRentButtonDisabled = (book) => {
-    return !rentLocation || !selectedDate;
+    return !(rentLocation && selectedDate);
   };
 
-  const toggleDatePicker = () => {
-    setShowDatePicker(!showDatePicker);
-  };
-
-  const handleDateChange = (event, date) => {
-    if (date !== undefined) {
-      setSelectedDate(new Date(date.getFullYear(), date.getMonth(), date.getDate()));
-    }
-    setShowDatePicker(false);
-  };
-
-  const handleSearchQueryChange = (query) => {
-    setSearchQuery(query);
-    refetch({ searchQuery: query });
-  };
-
-  const renderItem = ({ item }) => (
+  const renderBookItem = ({ item }) => (
     <View style={styles.bookItem}>
       <Image source={{ uri: item.imageURL }} style={styles.bookImage} />
       <View style={styles.bookDetails}>
@@ -65,7 +133,7 @@ const ViewAllBooks = ({ route }) => {
         <Text style={styles.bookAuthor}>Author: {item.author}</Text>
         <Text style={styles.bookEdition}>Edition: {item.edition}</Text>
         <Text style={styles.bookContent}>Description: {item.content}</Text>
-        {item.userId !== userId ? (
+        {item.ownerId !== userId ? (
           <>
             <TextInput
               style={styles.locationInput}
@@ -73,33 +141,20 @@ const ViewAllBooks = ({ route }) => {
               value={rentLocation}
               onChangeText={handleLocationChange}
             />
+            <TouchableOpacity style={styles.datePickerButton} onPress={() => setShowDatePicker(true)}>
+              <Text style={styles.buttonText}>Select Date</Text>
+            </TouchableOpacity>
+            {renderDatePicker(item.id, item.ownerId)}
             <TouchableOpacity
               style={[
                 styles.rentButton,
-                isRentButtonDisabled(item) ? styles.disabledButton : null
+                isRentButtonDisabled(item) || rentRequestSent[item.id] ? styles.disabledButton : null
               ]}
               onPress={() => handleRentRequest(item)}
-              disabled={isRentButtonDisabled(item)}
+              disabled={isRentButtonDisabled(item) || rentRequestSent[item.id]}
             >
-              <Text style={styles.rentButtonText}>Rent Request</Text>
+              <Text style={styles.rentButtonText}>{rentRequestSent[item.id] ? "Sent" : "Rent Request"}</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.datePickerButton}
-              onPress={toggleDatePicker}
-            >
-              <Text style={styles.buttonText}>Select Date</Text>
-            </TouchableOpacity>
-            {showDatePicker && (
-              <DateTimePicker
-                value={selectedDate}
-                mode="date"
-                display="default"
-                onChange={handleDateChange}
-              />
-            )}
-            {selectedDate && (
-              <Text style={styles.selectedDateText}>Requested Date: {selectedDate.toDateString()}</Text>
-            )}
           </>
         ) : (
           <Text style={styles.ownedBookText}>You Own This Book</Text>
@@ -109,36 +164,65 @@ const ViewAllBooks = ({ route }) => {
   );
 
   return (
-    <View style={styles.container}>
-      <Text>Welcome, {userName}!</Text>
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Search Books"
-        value={searchQuery}
-        onChangeText={handleSearchQueryChange}
-      />
-      <FlatList
-        data={books}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-      />
-    </View>
+    <ScrollView contentContainerStyle={styles.scrollViewContent}>
+      <View style={styles.container}>
+        <Text>Welcome, {userName}!</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={styles.header}>Books Added By Me</Text>
+        </View>
+        <FlatList
+          data={booksByMe}
+          renderItem={renderBookItem}
+          keyExtractor={item => item.id}
+          ListEmptyComponent={<Text>No books added by you</Text>}
+        />
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={styles.header}>Books Added By Others</Text>
+        </View>
+        <FlatList
+          data={booksByOthers}
+          renderItem={renderBookItem}
+          keyExtractor={item => item.id}
+          ListEmptyComponent={<Text>No books added by others</Text>}
+        />
+        <View>
+          {showDatePicker && (
+            <View>
+              <DateTimePicker
+                value={selectedDate}
+                mode="date"
+                display="default"
+                minimumDate={new Date()} // Set minimum date to today
+                onChange={(event, date) => {
+                  setShowDatePicker(false);
+                  if (date) setSelectedDate(date);
+                }}
+              />
+              <Text style={styles.selectedDateText}>Selected Date: {selectedDate.toLocaleDateString()}</Text>
+            </View>
+          )}
+        </View>
+      </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  scrollViewContent: {
+    flexGrow: 1,
     paddingHorizontal: 20,
     paddingTop: 20,
+    paddingBottom: 40,
   },
-  searchInput: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    borderRadius: 5,
+  container: {
+    flex: 1,
+    alignContent: "center",
+  },
+  header: {
+    fontSize: 24,
+    fontWeight: 'bold',
     marginBottom: 20,
-    paddingHorizontal: 10,
+    color: '#4b0082',
   },
   bookItem: {
     flexDirection: 'row',
@@ -219,6 +303,11 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
     color: '#4b0082',
+  },
+  divider: {
+    borderBottomColor: '#ccc',
+    borderBottomWidth: 1,
+    marginBottom: 10,
   },
 });
 

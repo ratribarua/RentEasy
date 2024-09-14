@@ -85,7 +85,7 @@ const StackNav = () => {
       <Stack.Screen name="AddBooks" component={AddBooks} />
       <Stack.Screen name="ViewAllBooks" component={ViewAllBooks} />
       <Stack.Screen name="ViewCart" component={ViewCart} />
-      <Stack.Screen name="MyBooks" component={MyBooks} />
+      
       <Stack.Screen name="Notification" component={Notification} />
       <Stack.Screen name="RentOptionsModal" component={RentOptionsModal} />
       <Stack.Screen name="CameraSearch" component={CameraSearch} />

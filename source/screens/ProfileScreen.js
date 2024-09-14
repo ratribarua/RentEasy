@@ -242,9 +242,7 @@ const handleNewNotification = () => {
         navigation.navigate('ViewAllBooks', { userName: userName, userId: userId });
     };
 
-    const navigateToMyBooks = (userName, userId) => {
-        navigation.navigate('MyBooks', { userName: userName, userId: userId });
-    };
+    
     const navigateToNotification = (userName, userId) => {
         navigation.navigate('Notification', { userName: userName, userId: userId });
     };
@@ -327,9 +325,7 @@ const handleNewNotification = () => {
                                         case 'ViewAllBooks':
                                             navigateToViewAllBooks(userData.userName, userData.userRef);
                                             break;
-                                        case 'MyBooks':
-                                            navigateToMyBooks(userData.userName, userData.userRef);
-                                            break;
+                                       
                                         case 'profileUpdate':
                                             navigation.navigate('ProfileUpdate');
                                             break;
@@ -350,7 +346,6 @@ const handleNewNotification = () => {
                             >
                                 <Picker.Item label="See More" value={null} style={{ fontSize: 20, padding: 150, color: "#9370db", fontWeight: "bold" }} />
                                 <Picker.Item label="All Books" value="ViewAllBooks" style={{ fontSize: 18, padding: 150, fontWeight: "bold" }} />
-                                <Picker.Item label="My Books" value="MyBooks" style={{ fontSize: 18, padding: 150, fontWeight: "bold" }} />
                                 <Picker.Item label="Notifications" value="Notification" style={{ fontSize: 18, padding: 150, fontWeight: "bold" }} />
                                 <Picker.Item label="See Blog" value="postScreen" style={{ fontSize: 18, padding: 150, fontWeight: "bold" }} />
                                 <Picker.Item label="Edit Profile" value="profileUpdate" style={{ fontSize: 18, padding: 150, fontWeight: "bold" }} />

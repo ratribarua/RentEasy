@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Image } from 'react-native';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 
@@ -50,8 +50,10 @@ const MyBooks = ({ route }) => {
         data={userBooks}
         renderItem={({ item, index }) => (
           <View style={styles.bookItem}>
+            <Image source={{ uri: item.imageURL }} style={styles.bookImage} />
             <Text style={styles.bookTitle}>{index + 1}) Title: {item.title}</Text>
-            <Text>Author: {item.author}</Text>
+            
+            <Text style={styles.bookAuthor}>Author: {item.author}</Text>
             {/* Add other book details */}
           </View>
         )}
@@ -82,11 +84,27 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
+    flexDirection: 'row', // Arrange items horizontally
+    alignItems: 'center', // Center items vertically
+  },
+  bookImage: {
+    width: 100,
+    height: 150,
+    resizeMode: 'cover',
+    borderRadius: 5,
+    marginRight: 10, // Space between image and text
+  },
+  bookDetails: {
+    flex: 1,
   },
   bookTitle: {
-    fontSize: 20, // Adjust font size here
-    marginBottom: 5, // Optional: Add margin bottom for better spacing
+    fontSize: 20,
+    marginBottom: 50, // Space between title and author
+  },
+  bookAuthor: {
+    fontSize: 16,
   },
 });
+
 
 export default MyBooks;
