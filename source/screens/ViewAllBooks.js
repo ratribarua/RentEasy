@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, Image, ScrollView, TouchableOpacity, Alert, TextInput } from 'react-native';
-import { collection, getDocs, addDoc, query, where, getFirestore } from 'firebase/firestore';
+import { collection, getDocs, addDoc, getFirestore } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
 import { db } from './firebaseConfig';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -110,7 +110,6 @@ const ViewAllBooks = ({ route }) => {
               if (date) setSelectedDate(date);
             }}
           />
-          <Text style={styles.selectedDateText}>Selected Date: {selectedDate.toLocaleDateString()}</Text>
         </View>
       );
     }
@@ -145,6 +144,9 @@ const ViewAllBooks = ({ route }) => {
               <Text style={styles.buttonText}>Select Date</Text>
             </TouchableOpacity>
             {renderDatePicker(item.id, item.ownerId)}
+            {selectedDate && item.ownerId !== userId && (
+              <Text style={styles.selectedDateText}>Selected Date: {selectedDate.toLocaleDateString()}</Text>
+            )}
             <TouchableOpacity
               style={[
                 styles.rentButton,
@@ -185,23 +187,6 @@ const ViewAllBooks = ({ route }) => {
           keyExtractor={item => item.id}
           ListEmptyComponent={<Text>No books added by others</Text>}
         />
-        <View>
-          {showDatePicker && (
-            <View>
-              <DateTimePicker
-                value={selectedDate}
-                mode="date"
-                display="default"
-                minimumDate={new Date()} // Set minimum date to today
-                onChange={(event, date) => {
-                  setShowDatePicker(false);
-                  if (date) setSelectedDate(date);
-                }}
-              />
-              <Text style={styles.selectedDateText}>Selected Date: {selectedDate.toLocaleDateString()}</Text>
-            </View>
-          )}
-        </View>
       </View>
     </ScrollView>
   );
@@ -283,32 +268,27 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
-  locationInput: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    borderRadius: 5,
+  disabledButton: {
+    backgroundColor: '#aaa',
+  },
+  selectedDateText: {
+    fontSize: 16,
     marginTop: 10,
-    paddingHorizontal: 10,
+    color: 'green',
   },
   ownedBookText: {
     fontSize: 16,
-    color: 'gray',
+    color: 'blue',
     marginTop: 10,
   },
-  disabledButton: {
-    backgroundColor: '#ccc',
-  },
-  selectedDateText: {
+  locationInput: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 8,
+    borderRadius: 5,
     marginTop: 10,
-    fontSize: 16,
-    color: '#4b0082',
-  },
-  divider: {
-    borderBottomColor: '#ccc',
-    borderBottomWidth: 1,
     marginBottom: 10,
-  },
+  }
 });
 
 export default ViewAllBooks;

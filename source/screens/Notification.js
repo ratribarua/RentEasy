@@ -3,9 +3,9 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput } from 
 import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 
-const NotificationItem = ({ notification, onApprove, onCancelApproval, showButton }) => {
+const NotificationItem = ({ notification, onApprove, onReject, onCancelApproval, showButton, isExpired }) => {
   const [showInput, setShowInput] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState(notification.ownerPhoneNumber || ''); // Initialize with ownerPhoneNumber if available
+  const [phoneNumber, setPhoneNumber] = useState(notification.ownerPhoneNumber || '');
 
   const handleApprove = async () => {
     try {
@@ -14,52 +14,48 @@ const NotificationItem = ({ notification, onApprove, onCancelApproval, showButto
         return;
       }
 
-      // Update the status of the notification to "approved" in Firestore
       await updateDoc(doc(db, 'notifications', notification.id), {
         status: 'approved',
-        ownerPhoneNumber: phoneNumber.trim(), // Store the owner's phone number
+        ownerPhoneNumber: phoneNumber.trim(),
       });
 
-      // Fetch other notifications for the same book
-      const otherNotifications = notifications.filter(otherNotification => otherNotification.id !== notification.id && otherNotification.bookId === notification.bookId);
-
-      // Update the status of other notifications to 'Book is not available'
-      for (const otherNotification of otherNotifications) {
-        await updateDoc(doc(db, 'notifications', otherNotification.id), {
-          status: 'Book is not available'
-        });
-      }
-
-      // Perform action with phone number, e.g., send SMS
-      console.log('Phone number:', phoneNumber);
-
-      // Invoke the callback function passed from the parent component
       onApprove(notification.id);
-      
       console.log(`Notification sent to sender ${notification.senderId}: "Approved"`);
     } catch (error) {
       console.error('Error approving request:', error);
     }
   };
 
+  const handleReject = async () => {
+    try {
+      await updateDoc(doc(db, 'notifications', notification.id), {
+        status: 'rejected',
+        ownerPhoneNumber: ''
+      });
+      onReject(notification.id);
+      console.log(`Notification sent to sender ${notification.senderId}: "Rejected"`);
+    } catch (error) {
+      console.error('Error rejecting request:', error);
+    }
+  };
+
   const handleCancelApproval = async () => {
     try {
-      // Update the status of the notification to "pending" in Firestore
       await updateDoc(doc(db, 'notifications', notification.id), {
         status: 'pending',
-        ownerPhoneNumber: '' // Clear owner's phone number when canceling approval
+        ownerPhoneNumber: ''
       });
-      // Invoke the callback function passed from the parent component
       onCancelApproval(notification.id);
-      
       console.log(`Notification sent to sender ${notification.senderId}: "Approval Canceled"`);
     } catch (error) {
       console.error('Error canceling approval:', error);
     }
   };
 
+  const boxStyle = isExpired ? styles.notificationItemExpired : styles.notificationItem;
+
   return (
-    <View style={styles.notificationItem}>
+    <View style={boxStyle}>
       <Text style={styles.notificationText}>Sender: {notification.senderName}</Text>
       <Text style={styles.notificationText}>Book Title: {notification.bookTitle}</Text>
       <Text style={styles.notificationText}>Location: {notification.location}</Text>
@@ -68,10 +64,16 @@ const NotificationItem = ({ notification, onApprove, onCancelApproval, showButto
       )}
 
       {showButton && notification.status === 'pending' && (
-        <TouchableOpacity style={styles.approveButton} onPress={() => setShowInput(true)}>
-          <Text style={styles.buttonText}>Approve Request</Text>
-        </TouchableOpacity>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.approveButton} onPress={() => setShowInput(true)}>
+            <Text style={styles.buttonText}>Approve</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.rejectButton} onPress={handleReject}>
+            <Text style={styles.buttonText}>Reject</Text>
+          </TouchableOpacity>
+        </View>
       )}
+
       {showInput && (
         <View>
           <TextInput
@@ -86,11 +88,13 @@ const NotificationItem = ({ notification, onApprove, onCancelApproval, showButto
           </TouchableOpacity>
         </View>
       )}
+
       {showButton && notification.status === 'approved' && (
         <TouchableOpacity style={styles.cancelButton} onPress={handleCancelApproval}>
           <Text style={styles.buttonText}>Cancel Approval</Text>
         </TouchableOpacity>
       )}
+
       {!showButton && (
         <View>
           <Text style={styles.notificationText}>Status: {notification.status}</Text>
@@ -104,11 +108,11 @@ const NotificationItem = ({ notification, onApprove, onCancelApproval, showButto
 };
 
 const Notification = ({ route }) => {
-  const { userName, userId } = route.params;
+  const { userId } = route.params;
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [fetchMode, setFetchMode] = useState('receiving'); // Default mode is 'receiving'
+  const [fetchMode, setFetchMode] = useState('receiving');
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -120,22 +124,27 @@ const Notification = ({ route }) => {
 
         let q;
         if (fetchMode === 'sending') {
-          // Fetch notifications where senderId is equal to userId
           q = query(collection(db, 'notifications'), where('senderId', '==', userId));
         } else {
-          // Fetch notifications where ownerId is equal to userId
           q = query(collection(db, 'notifications'), where('ownerId', '==', userId));
         }
-        
+
         const querySnapshot = await getDocs(q);
-        const fetchedNotifications = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          senderName: doc.data().senderName,
-          senderId: doc.data().senderId,
-          ownerPhoneNumber: doc.data().ownerPhoneNumber || '', // Initialize ownerPhoneNumber
-          rentDuration: doc.data().rentDuration || '', // Fetch rent duration
-          ...doc.data()
-        }));
+        const fetchedNotifications = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          const isExpired = data.rentDuration && new Date() > new Date(data.rentDuration.seconds * 1000);
+
+          return {
+            id: doc.id,
+            senderName: data.senderName,
+            senderId: data.senderId,
+            ownerPhoneNumber: data.ownerPhoneNumber || '',
+            rentDuration: data.rentDuration || '',
+            status: data.status,
+            isExpired,
+            ...data
+          };
+        });
         setNotifications(fetchedNotifications);
         setLoading(false);
       } catch (error) {
@@ -146,46 +155,38 @@ const Notification = ({ route }) => {
     };
 
     fetchNotifications();
-  }, [userId, fetchMode]); // Include fetchMode as dependency
+  }, [userId, fetchMode]);
 
   const toggleMode = () => {
-    // Toggle between 'sending' and 'receiving' modes
     setFetchMode(prevMode => (prevMode === 'sending' ? 'receiving' : 'sending'));
   };
 
-  const handleApproveRequest = async (notificationId) => {
-    try {
-      // Update the local state to reflect the approved request
-      setNotifications(prevNotifications =>
-        prevNotifications.map(notification =>
-          notification.id === notificationId ? { ...notification, status: 'approved' } : notification
-        )
-      );
-  
-      // Fetch other notifications for the same book
-      const otherNotifications = notifications.filter(otherNotification => otherNotification.id !== notificationId && otherNotification.bookId === notifications.find(notification => notification.id === notificationId).bookId);
-  
-      // Update the status of other notifications to 'Book is not available'
-      for (const otherNotification of otherNotifications) {
-        await updateDoc(doc(db, 'notifications', otherNotification.id), {
-          status: 'Book is not available'
-        });
-      }
-  
-      console.log(`Status updated for other users who requested the same book`);
-    } catch (error) {
-      console.error('Error updating status for other users:', error);
-    }
+  const handleApproveRequest = (notificationId) => {
+    setNotifications(prevNotifications =>
+      prevNotifications.map(notification =>
+        notification.id === notificationId ? { ...notification, status: 'approved' } : notification
+      )
+    );
   };
-  
+
+  const handleRejectRequest = (notificationId) => {
+    setNotifications(prevNotifications =>
+      prevNotifications.map(notification =>
+        notification.id === notificationId ? { ...notification, status: 'rejected', ownerPhoneNumber: '' } : notification
+      )
+    );
+  };
+
   const handleCancelApproval = (notificationId) => {
-    // Update the local state to reflect the canceled approval
     setNotifications(prevNotifications =>
       prevNotifications.map(notification =>
         notification.id === notificationId ? { ...notification, status: 'pending', ownerPhoneNumber: '' } : notification
       )
     );
   };
+
+  const newNotifications = notifications.filter(notification => notification.status === 'pending' && !notification.isExpired);
+  const oldNotifications = notifications.filter(notification => notification.status !== 'pending' || notification.isExpired);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -194,23 +195,51 @@ const Notification = ({ route }) => {
           <Text style={styles.toggleButton}>{fetchMode === 'sending' ? 'View Receiving Notifications' : 'View Sending Notifications'}</Text>
         </TouchableOpacity>
       </View>
+
       <View style={styles.section}>
-        <Text style={styles.header}>{fetchMode === 'sending' ? 'Sending Notifications' : 'Receiving Notifications'}</Text>
+        <Text style={styles.header}>New Notifications</Text>
         {loading && <Text>Loading...</Text>}
         {error && <Text>Error: {error}</Text>}
         {!loading && !error && (
           <View>
-            <View>
-              {notifications.map(notification => (
+            {newNotifications.length > 0 ? (
+              newNotifications.map(notification => (
                 <NotificationItem
                   key={notification.id}
                   notification={notification}
                   onApprove={handleApproveRequest}
+                  onReject={handleRejectRequest}
                   onCancelApproval={handleCancelApproval}
-                  showButton={fetchMode === 'receiving'} // Show buttons only for receiving notifications
+                  showButton={fetchMode === 'receiving'}
+                  isExpired={notification.isExpired}
                 />
-              ))}
-            </View>
+              ))
+            ) : (
+              <Text>No new notifications</Text>
+            )}
+          </View>
+        )}
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.header}>Old Notifications</Text>
+        {!loading && !error && (
+          <View>
+            {oldNotifications.length > 0 ? (
+              oldNotifications.map(notification => (
+                <NotificationItem
+                  key={notification.id}
+                  notification={notification}
+                  onApprove={handleApproveRequest}
+                  onReject={handleRejectRequest}
+                  onCancelApproval={handleCancelApproval}
+                  showButton={false} // No actions for old notifications
+                  isExpired={notification.isExpired}
+                />
+              ))
+            ) : (
+              <Text>No old notifications</Text>
+            )}
           </View>
         )}
       </View>
@@ -244,6 +273,14 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 10,
   },
+  notificationItemExpired: {
+    borderWidth: 1,
+    borderColor: '#ff0000', // Red border for expired notifications
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+    backgroundColor: '#ffe6e6', // Light red background
+  },
   notificationText: {
     fontSize: 18,
   },
@@ -254,6 +291,10 @@ const styles = StyleSheet.create({
     padding: 8,
     marginBottom: 10,
   },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
   approveButton: {
     backgroundColor: '#4b0082',
     paddingVertical: 8,
@@ -261,6 +302,13 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginTop: 10,
     marginRight: 10,
+  },
+  rejectButton: {
+    backgroundColor: '#ff6347',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 5,
+    marginTop: 10,
   },
   cancelButton: {
     backgroundColor: '#ff6347',
