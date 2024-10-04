@@ -100,6 +100,7 @@ const AddBooks = ({ route }) => {
       setImage(null);
 
       Alert.alert('Success', 'Book added successfully');
+      console.log('Book added successfully');
     } catch (error) {
       console.error('Error posting book:', error);
       Alert.alert('Error', 'Failed to add book. Please try again.');
@@ -124,7 +125,7 @@ const AddBooks = ({ route }) => {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
-        <Text>Welcome, {userName}!</Text>
+        <Text>Add books, {userName}!</Text>
         <View style={styles.contentContainer}>
           <TextInput
             style={styles.input}
