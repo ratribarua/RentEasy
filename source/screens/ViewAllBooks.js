@@ -17,6 +17,9 @@ const ViewAllBooks = ({ route }) => {
   const [rentLocation, setRentLocation] = useState('');
   const [rentRequestSent, setRentRequestSent] = useState({});
 
+  const [searchQuery, setSearchQuery] = useState('');
+
+
   useEffect(() => {
     const fetchBooks = async () => {
       try {
@@ -41,6 +44,44 @@ const ViewAllBooks = ({ route }) => {
 
     fetchBooks();
   }, [userId]);
+
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, 'books'));
+        const fetchedBooks = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ownerId: doc.data().userId,
+          ...doc.data()
+        }));
+  
+        const filteredBooksByMe = fetchedBooks
+          .filter(book => book.ownerId === userId)
+          .filter(book =>
+            book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            book.author.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+  
+        const filteredBooksByOthers = fetchedBooks
+          .filter(book => book.ownerId !== userId)
+          .filter(book =>
+            book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            book.author.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+  
+        setBooksByMe(filteredBooksByMe);
+        setBooksByOthers(filteredBooksByOthers);
+        initializeRentRequestStatus(fetchedBooks);
+        fetchSentRequests();
+      } catch (error) {
+        console.error('Error fetching books:', error);
+      }
+    };
+  
+    fetchBooks();
+  }, [userId, searchQuery]); // Add searchQuery to dependencies
+  
+
 
   const initializeRentRequestStatus = (fetchedBooks) => {
     const initialRentRequestStatus = {};
@@ -96,24 +137,24 @@ const ViewAllBooks = ({ route }) => {
     }
   };
 
-  const renderDatePicker = (bookId, ownerId) => {
-    if (showDatePicker && ownerId !== userId) {
-      return (
-        <View>
-          <DateTimePicker
-            value={selectedDate}
-            mode="date"
-            display="default"
-            minimumDate={new Date()} // Set minimum date to today
-            onChange={(event, date) => {
-              setShowDatePicker(false);
-              if (date) setSelectedDate(date);
-            }}
-          />
-        </View>
-      );
-    }
-  };
+const renderDatePicker = (bookId, ownerId) => {
+  return showDatePicker && (
+    <DateTimePicker
+      value={selectedDate}
+      mode="date"
+      display="default"
+      minimumDate={new Date()} // Ensure the date picker doesn't allow past dates
+      onChange={(event, date) => {
+        if (event.type === "set" && date) {
+          setSelectedDate(date); // Set the selected date
+        }
+        setShowDatePicker(false); // Hide the picker after selection
+      }}
+    />
+  );
+};
+
+
 
   const handleLocationChange = (location) => {
     setRentLocation(location);
@@ -169,6 +210,14 @@ const ViewAllBooks = ({ route }) => {
     <ScrollView contentContainerStyle={styles.scrollViewContent}>
       <View style={styles.container}>
         <Text>Welcome, {userName}!</Text>
+
+        <TextInput
+  style={styles.searchInput}
+  placeholder="Search by Title or Author"
+  value={searchQuery}
+  onChangeText={(text) => setSearchQuery(text)}
+/>
+
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Text style={styles.header}>Books Added By Me</Text>
         </View>
@@ -209,6 +258,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     color: '#4b0082',
   },
+  searchInput: {
+  borderWidth: 1,
+  borderColor: '#ccc',
+  padding: 8,
+  borderRadius: 5,
+  marginBottom: 20,
+},
+
   bookItem: {
     flexDirection: 'row',
     marginBottom: 20,

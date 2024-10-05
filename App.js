@@ -14,14 +14,11 @@ import DrawerContent from './source/screens/DrawerContent';
 import RatingScreen from './source/screens/RatingScreen';
 import ProfileScreen from './source/screens/ProfileScreen';
 import ProfileUpdate from './source/screens/ProfileUpdate';
-import SearchScreen from './source/screens/SearchScreen';
 import VideoPlaying from './source/screens/VideoPlaying';
 import BlogScreen from './source/screens/BlogScreen';
 import Gmaps from './source/screens/Gmaps';
 import AddBooks from './source/screens/AddBooks';
 import ViewAllBooks from './source/screens/ViewAllBooks';
-import ViewCart from './source/screens/ViewCart';
-import MyBooks from './source/screens/MyBooks';
 import Notification from './source/screens/Notification';
 import RentOptionsModal from './source/screens/RentOptionsModal';
 import CameraSearch from './source/screens/CameraSearch';
@@ -78,14 +75,11 @@ const StackNav = () => {
       <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
       <Stack.Screen name="RatingScreen" component={RatingScreen} />
       <Stack.Screen name="ProfileUpdate" component={ProfileUpdate} />
-      <Stack.Screen name="SearchScreen" component={SearchScreen} />
       <Stack.Screen name="VideoPlaying" component={VideoPlaying} />
       <Stack.Screen name="BlogScreen" component={BlogScreen} />
       <Stack.Screen name="Gmaps" component={Gmaps} />
       <Stack.Screen name="AddBooks" component={AddBooks} />
       <Stack.Screen name="ViewAllBooks" component={ViewAllBooks} />
-      <Stack.Screen name="ViewCart" component={ViewCart} />
-      
       <Stack.Screen name="Notification" component={Notification} />
       <Stack.Screen name="RentOptionsModal" component={RentOptionsModal} />
       <Stack.Screen name="CameraSearch" component={CameraSearch} />
