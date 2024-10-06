@@ -3,10 +3,12 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput } from 
 import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 
+// Component for individual notification item
 const NotificationItem = ({ notification, onApprove, onReject, onCancelApproval, showButton, isExpired }) => {
-  const [showInput, setShowInput] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState(notification.ownerPhoneNumber || '');
+  const [showInput, setShowInput] = useState(false); // State for showing phone input
+  const [phoneNumber, setPhoneNumber] = useState(notification.ownerPhoneNumber || ''); // State for phone number input
 
+  // Handles approving a notification and updates Firebase
   const handleApprove = async () => {
     try {
       if (showInput && phoneNumber.trim() === '') {
@@ -19,43 +21,46 @@ const NotificationItem = ({ notification, onApprove, onReject, onCancelApproval,
         ownerPhoneNumber: phoneNumber.trim(),
       });
 
-      onApprove(notification.id);
+      onApprove(notification.id); // Callback to update parent state
       console.log(`Notification sent to sender ${notification.senderId}: "Approved"`);
     } catch (error) {
       console.error('Error approving request:', error);
     }
   };
 
+  // Handles rejecting a notification and updates Firebase
   const handleReject = async () => {
     try {
       await updateDoc(doc(db, 'notifications', notification.id), {
         status: 'rejected',
         ownerPhoneNumber: ''
       });
-      onReject(notification.id);
+      onReject(notification.id); // Callback to update parent state
       console.log(`Notification sent to sender ${notification.senderId}: "Rejected"`);
     } catch (error) {
       console.error('Error rejecting request:', error);
     }
   };
 
+  // Cancels an approval and resets status to pending in Firebase
   const handleCancelApproval = async () => {
     try {
       await updateDoc(doc(db, 'notifications', notification.id), {
         status: 'pending',
         ownerPhoneNumber: ''
       });
-      onCancelApproval(notification.id);
+      onCancelApproval(notification.id); // Callback to update parent state
       console.log(`Notification sent to sender ${notification.senderId}: "Approval Canceled"`);
     } catch (error) {
       console.error('Error canceling approval:', error);
     }
   };
 
-  const boxStyle = isExpired ? styles.notificationItemExpired : styles.notificationItem;
+  const boxStyle = isExpired ? styles.notificationItemExpired : styles.notificationItem; // Style depending on expiry
 
   return (
     <View style={boxStyle}>
+      {/* Displaying basic notification details */}
       <Text style={styles.notificationText}>Sender: {notification.senderName}</Text>
       <Text style={styles.notificationText}>Book Title: {notification.bookTitle}</Text>
       <Text style={styles.notificationText}>Location: {notification.location}</Text>
@@ -63,6 +68,7 @@ const NotificationItem = ({ notification, onApprove, onReject, onCancelApproval,
         <Text style={styles.notificationText}>Rent Duration: {new Date(notification.rentDuration.seconds * 1000).toLocaleDateString()}</Text>
       )}
 
+      {/* Conditional buttons for approval/rejection */}
       {showButton && notification.status === 'pending' && (
         <View style={styles.buttonContainer}>
           <TouchableOpacity style={styles.approveButton} onPress={() => setShowInput(true)}>
@@ -74,6 +80,7 @@ const NotificationItem = ({ notification, onApprove, onReject, onCancelApproval,
         </View>
       )}
 
+      {/* Input field for phone number after clicking approve */}
       {showInput && (
         <View>
           <TextInput
@@ -89,12 +96,14 @@ const NotificationItem = ({ notification, onApprove, onReject, onCancelApproval,
         </View>
       )}
 
+      {/* Button to cancel approval if already approved */}
       {showButton && notification.status === 'approved' && (
         <TouchableOpacity style={styles.cancelButton} onPress={handleCancelApproval}>
           <Text style={styles.buttonText}>Cancel Approval</Text>
         </TouchableOpacity>
       )}
 
+      {/* Displaying status and phone number for old notifications */}
       {!showButton && (
         <View>
           <Text style={styles.notificationText}>Status: {notification.status}</Text>
@@ -107,13 +116,15 @@ const NotificationItem = ({ notification, onApprove, onReject, onCancelApproval,
   );
 };
 
+// Main Notification component that handles fetching and displaying notifications
 const Notification = ({ route }) => {
-  const { userId } = route.params;
-  const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [fetchMode, setFetchMode] = useState('receiving');
+  const { userId } = route.params; // User ID passed via navigation route
+  const [notifications, setNotifications] = useState([]); // State for notifications list
+  const [loading, setLoading] = useState(true); // Loading state
+  const [error, setError] = useState(null); // Error state
+  const [fetchMode, setFetchMode] = useState('receiving'); // Mode to switch between sending and receiving notifications
 
+  // Fetch notifications on component mount and fetchMode/userId change
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
@@ -122,6 +133,7 @@ const Notification = ({ route }) => {
           return;
         }
 
+        // Fetch notifications based on fetchMode
         let q;
         if (fetchMode === 'sending') {
           q = query(collection(db, 'notifications'), where('senderId', '==', userId));
@@ -145,7 +157,7 @@ const Notification = ({ route }) => {
             ...data
           };
         });
-        setNotifications(fetchedNotifications);
+        setNotifications(fetchedNotifications); // Set notifications state
         setLoading(false);
       } catch (error) {
         console.error('Error fetching notifications:', error);
@@ -157,10 +169,12 @@ const Notification = ({ route }) => {
     fetchNotifications();
   }, [userId, fetchMode]);
 
+  // Toggles between viewing sending and receiving notifications
   const toggleMode = () => {
     setFetchMode(prevMode => (prevMode === 'sending' ? 'receiving' : 'sending'));
   };
 
+  // Update notification status locally after approval
   const handleApproveRequest = (notificationId) => {
     setNotifications(prevNotifications =>
       prevNotifications.map(notification =>
@@ -169,6 +183,7 @@ const Notification = ({ route }) => {
     );
   };
 
+  // Update notification status locally after rejection
   const handleRejectRequest = (notificationId) => {
     setNotifications(prevNotifications =>
       prevNotifications.map(notification =>
@@ -177,6 +192,7 @@ const Notification = ({ route }) => {
     );
   };
 
+  // Update notification status locally after canceling approval
   const handleCancelApproval = (notificationId) => {
     setNotifications(prevNotifications =>
       prevNotifications.map(notification =>
@@ -185,17 +201,20 @@ const Notification = ({ route }) => {
     );
   };
 
+  // Separate new and old notifications
   const newNotifications = notifications.filter(notification => notification.status === 'pending' && !notification.isExpired);
   const oldNotifications = notifications.filter(notification => notification.status !== 'pending' || notification.isExpired);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      {/* Toggle between viewing sending and receiving notifications */}
       <View style={styles.section}>
         <TouchableOpacity onPress={toggleMode}>
           <Text style={styles.toggleButton}>{fetchMode === 'sending' ? 'View Receiving Notifications' : 'View Sending Notifications'}</Text>
         </TouchableOpacity>
       </View>
 
+      {/* Display new notifications */}
       <View style={styles.section}>
         <Text style={styles.header}>New Notifications</Text>
         {loading && <Text>Loading...</Text>}
@@ -221,6 +240,7 @@ const Notification = ({ route }) => {
         )}
       </View>
 
+      {/* Display old notifications */}
       <View style={styles.section}>
         <Text style={styles.header}>Old Notifications</Text>
         {!loading && !error && (
@@ -247,6 +267,7 @@ const Notification = ({ route }) => {
   );
 };
 
+// Styles for Notification component and items
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
