@@ -36,7 +36,6 @@ const NotificationItem = ({ notification, notifications, onApprove, onCancelAppr
       }
 
       Alert.alert('Approval Successful', 'Request approved successfully.');
-      Alert.alert('Notification Sent', `Phone number successfully sent to ${notification.senderName}.`);
       onApprove(notification.id);
     } catch (error) {
       console.error('Error approving request:', error);
@@ -47,7 +46,7 @@ const NotificationItem = ({ notification, notifications, onApprove, onCancelAppr
     try {
       await updateDoc(doc(db, 'notifications', notification.id), {
         status: 'pending',
-        ownerPhoneNumber: ''
+        ownerPhoneNumber: '',
       });
       onCancelApproval(notification.id);
       Alert.alert('Approval Canceled', 'Approval has been canceled successfully.');
@@ -59,7 +58,7 @@ const NotificationItem = ({ notification, notifications, onApprove, onCancelAppr
   const handleDecline = async () => {
     try {
       await updateDoc(doc(db, 'notifications', notification.id), {
-        status: 'request declined'
+        status: 'request declined',
       });
       onDecline(notification.id);
       Alert.alert('Request Declined', 'The request has been declined.');
@@ -68,8 +67,26 @@ const NotificationItem = ({ notification, notifications, onApprove, onCancelAppr
     }
   };
 
+  const handleReturnBook = async () => {
+    try {
+      // Update the notification to reflect the book has been returned
+      await updateDoc(doc(db, 'notifications', notification.id), {
+        status: 'returned',
+      });
+
+      // Optional: Send a notification to the owner if necessary
+      Alert.alert('Book Returned', 'The book has been successfully returned to the owner.');
+    } catch (error) {
+      console.error('Error returning book:', error);
+    }
+  };
+
   return (
-    <View style={[styles.notificationItem, isExpired && styles.expiredBox]}>
+    <View style={[
+      styles.notificationItem, 
+      isExpired && styles.expiredBox,
+      notification.status === 'approved' && styles.approvedBox
+    ]}>
       <Text style={styles.notificationText}>Sender: {notification.senderName}</Text>
       <Text style={styles.notificationText}>Book Title: {notification.bookTitle}</Text>
       <Text style={styles.notificationText}>Location: {notification.location}</Text>
@@ -107,11 +124,19 @@ const NotificationItem = ({ notification, notifications, onApprove, onCancelAppr
           <Text style={styles.buttonText}>Cancel Approval</Text>
         </TouchableOpacity>
       )}
+      {notification.status === 'approved' && isExpired && (
+        <TouchableOpacity style={styles.returnButton} onPress={handleReturnBook}>
+          <Text style={styles.buttonText}>Return Book</Text>
+        </TouchableOpacity>
+      )}
       {!showButton && (
         <View>
           <Text style={styles.notificationText}>Status: {notification.status}</Text>
           {notification.ownerPhoneNumber && (
             <Text style={styles.notificationText}>Phone Number: {notification.ownerPhoneNumber}</Text>
+          )}
+          {notification.status === 'approved' && isExpired && (
+            <Text style={styles.notificationText}>Book is not returned yet.</Text>
           )}
         </View>
       )}
@@ -242,57 +267,66 @@ const styles = StyleSheet.create({
   toggleButton: {
     color: '#007bff',
     textDecorationLine: 'underline',
-    fontSize: 20,
+    fontSize: 18,
   },
   notificationItem: {
+    backgroundColor: '#f9f9f9',
+    padding: 15,
+    borderRadius: 10,
+    marginVertical: 5,
+  },
+  approvedBox: {
+    borderColor: 'green',
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 10,
+  },
+  expiredBox: {
+    backgroundColor: '#f8d7da',
   },
   notificationText: {
-    fontSize: 18,
+    fontSize: 16,
+    marginBottom: 5,
   },
   phoneNumberInput: {
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
-    padding: 8,
+    padding: 10,
     marginBottom: 10,
-  },
-  approveButton: {
-    backgroundColor: '#4b0082',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 5,
-    marginTop: 10,
-    marginRight: 10,
-  },
-  declineButton: {
-    backgroundColor: '#ff4500',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 5,
-    marginTop: 10,
-  },
-  cancelButton: {
-    backgroundColor: '#ff6347',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 5,
-    marginTop: 10,
   },
   buttonText: {
     color: '#fff',
+    textAlign: 'center',
     fontSize: 16,
   },
-  expiredText: {
-    color: 'red', // Change the text color to red for expired rent durations
+  approveButton: {
+    backgroundColor: '#28a745',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    marginBottom: 5,
   },
-  expiredBox: {
-    borderColor: 'red', // Change the border color to red for expired notifications
-    borderWidth: 2, // Adjust border width if necessary
+  declineButton: {
+    backgroundColor: '#dc3545',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+  },
+  cancelButton: {
+    backgroundColor: '#ffc107',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    marginTop: 10,
+  },
+  returnButton: {
+    backgroundColor: '#007bff',  // Blue background for the return button
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    marginTop: 10,
+  },
+  expiredText: {
+    color: 'red',
   },
 });
 
