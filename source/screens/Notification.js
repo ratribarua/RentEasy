@@ -7,6 +7,11 @@ const NotificationItem = ({ notification, notifications, onApprove, onCancelAppr
   const [showInput, setShowInput] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState(notification.ownerPhoneNumber || '');
 
+  // Check if the rent duration has expired
+  const isExpired = notification.rentDuration
+    ? new Date(notification.rentDuration.seconds * 1000) < new Date()
+    : false;
+
   const handleApprove = async () => {
     try {
       if (showInput && phoneNumber.trim() === '') {
@@ -64,12 +69,12 @@ const NotificationItem = ({ notification, notifications, onApprove, onCancelAppr
   };
 
   return (
-    <View style={styles.notificationItem}>
+    <View style={[styles.notificationItem, isExpired && styles.expiredBox]}>
       <Text style={styles.notificationText}>Sender: {notification.senderName}</Text>
       <Text style={styles.notificationText}>Book Title: {notification.bookTitle}</Text>
       <Text style={styles.notificationText}>Location: {notification.location}</Text>
       {notification.rentDuration && (
-        <Text style={styles.notificationText}>
+        <Text style={[styles.notificationText, isExpired && styles.expiredText]}>
           Rent Duration: {new Date(notification.rentDuration.seconds * 1000).toLocaleDateString()}
         </Text>
       )}
@@ -209,7 +214,7 @@ const Notification = ({ route }) => {
                 notifications={notifications}
                 onApprove={handleApproveRequest}
                 onCancelApproval={handleCancelApproval}
-                onDecline={handleDeclineRequest} // Pass decline handler
+                onDecline={handleDeclineRequest}
                 showButton={fetchMode === 'receiving'}
               />
             ))}
@@ -280,8 +285,14 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontSize: 16,
+  },
+  expiredText: {
+    color: 'red', // Change the text color to red for expired rent durations
+  },
+  expiredBox: {
+    borderColor: 'red', // Change the border color to red for expired notifications
+    borderWidth: 2, // Adjust border width if necessary
   },
 });
 

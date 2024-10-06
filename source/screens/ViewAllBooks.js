@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, Alert, TextInput } from 'react-native';
-import { collection, getDocs, addDoc, getFirestore } from 'firebase/firestore';
+import { collection, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from './firebaseConfig';
 import DateTimePicker from '@react-native-community/datetimepicker';
-
-const firestore = getFirestore();
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const ViewAllBooks = ({ route }) => {
   const { userName, userId } = route.params;
@@ -162,6 +161,33 @@ const ViewAllBooks = ({ route }) => {
     return !(rentLocation && selectedDate);
   };
 
+  const handleDeleteBook = (bookId) => {
+    Alert.alert(
+      "Confirm Delete",
+      "Are you sure you want to delete this book?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Delete",
+          onPress: async () => {
+            try {
+              await deleteDoc(doc(db, 'books', bookId)); // Delete the book from Firestore
+              setBooksByMe(prevBooks => prevBooks.filter(book => book.id !== bookId)); // Update local state
+              Alert.alert('Book Deleted', 'The book has been successfully deleted.');
+            } catch (error) {
+              console.error('Error deleting book:', error);
+              Alert.alert('Error', 'There was an error deleting the book.');
+            }
+          },
+          style: "destructive"
+        }
+      ]
+    );
+  };
+
   const renderBookItem = ({ item }) => (
     <View style={styles.bookItem}>
       <Image source={{ uri: item.imageURL }} style={styles.bookImage} />
@@ -171,6 +197,11 @@ const ViewAllBooks = ({ route }) => {
         <Text style={styles.bookAuthor}>Author: {item.author}</Text>
         <Text style={styles.bookEdition}>Edition: {item.edition}</Text>
         <Text style={styles.bookContent}>Description: {item.content}</Text>
+        {item.ownerId === userId && ( // Show delete icon only for the owner
+          <TouchableOpacity onPress={() => handleDeleteBook(item.id)} style={styles.deleteButton}>
+            <Icon name="delete" size={24} color="red" />
+          </TouchableOpacity>
+        )}
         {item.ownerId !== userId ? (
           <>
             <TextInput
@@ -237,87 +268,99 @@ const ViewAllBooks = ({ route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 10,
-    backgroundColor: '#fff',
+    padding: 20,
+    backgroundColor: '#f8f9fa',
+  },
+  searchBar: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingLeft: 10,
+    marginBottom: 20,
   },
   sectionHeader: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginTop: 20,
     marginBottom: 10,
-  },
-  searchBar: {
-    padding: 10,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 10,
-    marginBottom: 20,
   },
   bookItem: {
     flexDirection: 'row',
+    marginBottom: 20,
+    backgroundColor: 'white',
+    borderRadius: 5,
     padding: 10,
-    marginBottom: 10,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 1,
   },
   bookImage: {
-    width: 80,
-    height: 120,
+    width: 60,
+    height: 80,
+    borderRadius: 5,
     marginRight: 10,
   },
   bookDetails: {
     flex: 1,
-    justifyContent: 'center',
   },
   bookUserName: {
-    fontWeight: 'bold',
+    fontSize: 12,
+    color: 'gray',
   },
   bookTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   bookAuthor: {
-    fontStyle: 'italic',
+    fontSize: 14,
+    color: 'gray',
   },
   bookEdition: {
-    marginTop: 5,
+    fontSize: 14,
+    color: 'gray',
   },
   bookContent: {
-    marginTop: 5,
+    fontSize: 12,
+    color: 'black',
   },
-  rentButton: {
-    backgroundColor: '#4CAF50',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  disabledButton: {
-    backgroundColor: '#ccc',
-  },
-  buttonText: {
-    color: '#fff',
+  deleteButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
   },
   locationInput: {
-    marginTop: 10,
-    padding: 10,
-    borderColor: '#ddd',
+    height: 40,
+    borderColor: 'gray',
     borderWidth: 1,
     borderRadius: 5,
+    marginBottom: 10,
+    paddingLeft: 10,
   },
   datePickerButton: {
-    backgroundColor: '#2196F3',
-    padding: 10,
+    backgroundColor: '#007bff',
     borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
     alignItems: 'center',
-    marginTop: 10,
+  },
+  buttonText: {
+    color: 'white',
   },
   selectedDateText: {
-    marginTop: 10,
+    marginBottom: 10,
+  },
+  rentButton: {
+    backgroundColor: '#28a745',
+    borderRadius: 5,
+    padding: 10,
+    alignItems: 'center',
+  },
+  disabledButton: {
+    backgroundColor: 'gray',
   },
   datePickerContainer: {
-    marginTop: 10,
+    marginVertical: 10,
   },
 });
 
