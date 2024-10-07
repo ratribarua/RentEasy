@@ -11,14 +11,16 @@ const TENSORFLOW_CHANNEL = 3; // Assuming RGB images (3 channels)
 
 export const getModel = async () => {
   try {
-    await tf.ready();
-    return await tf.loadLayersModel(bundleResourceIO(modelJson, modelWeights));
+    await tf.ready(); // Wait until TensorFlow.js is ready to use
+    return await tf.loadLayersModel(bundleResourceIO(modelJson, modelWeights)); // Load the model using the specified JSON and weights
   } catch (error) {
-    console.error('Could not load model', error);
-    throw error; // Ensure it throws an error to stop execution if the model can't load
+    console.error('Could not load model', error); // Log any errors that occur during loading
+    throw error; // Rethrow the error to stop execution if the model can't load
   }
 };
 
+
+//Converting Image Data to a Tensor
 export const convertBase64ToTensor = async (base64) => {
   try {
     const uIntArray = Base64Binary.decode(base64);
@@ -35,6 +37,8 @@ export const convertBase64ToTensor = async (base64) => {
   }
 };
 
+
+//Making a Prediction
 export const startPrediction = async (model, tensor) => {
   try {
     const prediction = model.predict(tensor);

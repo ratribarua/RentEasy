@@ -13,6 +13,11 @@ const CameraSearch = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [presentedShape, setPresentedShape] = useState('');
 
+
+
+  //Trigger Image Capture: When called, handleImageCapture sets isProcessing to true and 
+  //captures an image using the camera, with base64 encoding enabled. The captured image data is then passed to processImagePrediction.
+
   const handleImageCapture = async () => {
     setIsProcessing(true);
     const imageData = await cameraRef.current.takePictureAsync({ base64: true });

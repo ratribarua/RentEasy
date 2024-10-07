@@ -2,9 +2,13 @@
 import { Dimensions } from 'react-native';
 import * as ImageManipulator from 'expo-image-manipulator';
 
-const { height: DEVICE_HEIGHT, width: DEVICE_WIDTH } = Dimensions.get('window');
-export const BITMAP_DIMENSION = 224;
 
+// Get the height and width of the device's screen
+const { height: DEVICE_HEIGHT, width: DEVICE_WIDTH } = Dimensions.get('window');
+export const BITMAP_DIMENSION = 224; // Define a constant for the bitmap dimensions to which the image will be resized
+
+
+// Define an asynchronous function to crop and resize an image
 export const cropPicture = async (imageData, maskDimension) => {
   try {
     const { uri, width, height } = imageData;
