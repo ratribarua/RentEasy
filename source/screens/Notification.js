@@ -3,6 +3,8 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert 
 import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 
+
+// Component for displaying a single notification item
 const NotificationItem = ({ notification, notifications, onApprove, onCancelApproval, onDecline, showButton }) => {
   const [showInput, setShowInput] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState(notification.ownerPhoneNumber || '');
@@ -16,7 +18,8 @@ const NotificationItem = ({ notification, notifications, onApprove, onCancelAppr
       try {
         // Define a regular expression for a valid phone number (11 digits)
         const phoneRegex = /^\d{11}$/;
-    
+
+        //approve button will not work without phone number
         if (showInput && phoneNumber.trim() === '') {
           Alert.alert('Error', 'Please enter a phone number.');
           return;
@@ -28,11 +31,13 @@ const NotificationItem = ({ notification, notifications, onApprove, onCancelAppr
           return;
         }
     
+         // Update the notification status and phone number in Firestore
         await updateDoc(doc(db, 'notifications', notification.id), {
           status: 'approved',
           ownerPhoneNumber: phoneNumber.trim(),
         });
-    
+        
+        // Update other notifications related to the same book
         const otherNotifications = notifications.filter(
           otherNotification =>
             otherNotification.id !== notification.id && otherNotification.bookId === notification.bookId
@@ -51,7 +56,9 @@ const NotificationItem = ({ notification, notifications, onApprove, onCancelAppr
       }
     };
     
+  
 
+    // Function to handle cancellation of approval
   const handleCancelApproval = async () => {
     try {
       await updateDoc(doc(db, 'notifications', notification.id), {
@@ -65,31 +72,22 @@ const NotificationItem = ({ notification, notifications, onApprove, onCancelAppr
     }
   };
 
+
+    // Function to handle declining the notification
   const handleDecline = async () => {
     try {
       await updateDoc(doc(db, 'notifications', notification.id), {
         status: 'request declined',
       });
-      onDecline(notification.id);
+      onDecline(notification.id); 
+      //After the document is successfully updated, the line onDecline(notification.id); calls a callback function named onDecline, sending it the ID of the notification that was declined. This allows the parent component to perform additional actions, such as refreshing the list of notifications or updating the user interface to reflect the change.
       Alert.alert('Request Declined', 'The request has been declined.');
     } catch (error) {
       console.error('Error declining request:', error);
     }
   };
 
-  const handleReturnBook = async () => {
-    try {
-      // Update the notification to reflect the book has been returned
-      await updateDoc(doc(db, 'notifications', notification.id), {
-        status: 'returned',
-      });
 
-      // Optional: Send a notification to the owner if necessary
-      Alert.alert('Book Returned', 'The book has been successfully returned to the owner.');
-    } catch (error) {
-      console.error('Error returning book:', error);
-    }
-  };
 
   return (
     <View style={[
@@ -115,7 +113,7 @@ const NotificationItem = ({ notification, notifications, onApprove, onCancelAppr
           </TouchableOpacity>
         </>
       )}
-      {showInput && (
+      {showInput && ( // Show input field for phone number when approved
         <View>
           <TextInput
             style={styles.phoneNumberInput}
@@ -129,17 +127,12 @@ const NotificationItem = ({ notification, notifications, onApprove, onCancelAppr
           </TouchableOpacity>
         </View>
       )}
-      {showButton && notification.status === 'approved' && (
+      {showButton && notification.status === 'approved' && ( // Show cancel approval button if the request is approved
         <TouchableOpacity style={styles.cancelButton} onPress={handleCancelApproval}>
           <Text style={styles.buttonText}>Cancel Approval</Text>
         </TouchableOpacity>
       )}
-      {notification.status === 'approved' && isExpired && (
-        <TouchableOpacity style={styles.returnButton} onPress={handleReturnBook}>
-          <Text style={styles.buttonText}>Return Book</Text>
-        </TouchableOpacity>
-      )}
-      {!showButton && (
+      {!showButton && ( // Display status and phone number if buttons are not shown
         <View>
           <Text style={styles.notificationText}>Status: {notification.status}</Text>
           {notification.ownerPhoneNumber && (
@@ -154,6 +147,9 @@ const NotificationItem = ({ notification, notifications, onApprove, onCancelAppr
   );
 };
 
+
+
+// Main Notification component to handle fetching and displaying notifications
 const Notification = ({ route }) => {
   const { userName, userId } = route.params;
   const [notifications, setNotifications] = useState([]);
@@ -164,43 +160,49 @@ const Notification = ({ route }) => {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        if (!userId) {
+        if (!userId) { // If no user ID is provided, stop loading
           setLoading(false);
           return;
         }
 
-        let q;
-        if (fetchMode === 'sending') {
+        let q; // Query variable
+        if (fetchMode === 'sending') {  // Determine query based on fetch mode wether it is sneding or recieving
           q = query(collection(db, 'notifications'), where('senderId', '==', userId));
         } else {
           q = query(collection(db, 'notifications'), where('ownerId', '==', userId));
         }
 
-        const querySnapshot = await getDocs(q);
+        const querySnapshot = await getDocs(q);// Fetch notifications from Firestore
         const fetchedNotifications = querySnapshot.docs.map(doc => ({
           id: doc.id,
           senderName: doc.data().senderName,
           senderId: doc.data().senderId,
           ownerPhoneNumber: doc.data().ownerPhoneNumber || '',
           rentDuration: doc.data().rentDuration || '',
-          ...doc.data(),
+          ...doc.data(),// Spread other notification data
+
         }));
-        setNotifications(fetchedNotifications);
-        setLoading(false);
+        setNotifications(fetchedNotifications); // Update state with fetched notifications
+        setLoading(false); // Stop loading
       } catch (error) {
         console.error('Error fetching notifications:', error);
-        setError(error.message);
-        setLoading(false);
+        setError(error.message);// Set error state
+        setLoading(false);// Stop loading
       }
     };
 
-    fetchNotifications();
-  }, [userId, fetchMode]);
+    fetchNotifications();// Call the fetch function
+  }, [userId, fetchMode]);// Dependency array for userId and fetchMode
 
+
+// Function to toggle between sending and receiving notifications
   const toggleMode = () => {
     setFetchMode(prevMode => (prevMode === 'sending' ? 'receiving' : 'sending'));
   };
 
+
+
+  ///////////////// // Handlers for approving, canceling approval, and declining notifications/////////////
   const handleApproveRequest = (notificationId) => {
     setNotifications(prevNotifications =>
       prevNotifications.map(notification =>
@@ -208,6 +210,9 @@ const Notification = ({ route }) => {
       )
     );
   };
+  //notification => ...: For each notification:
+  //If notification.id === notificationId, it returns a new notification object with the same properties as the original but with the status set to 'approved'.
+  //If the IDs don't match, it returns the original notification unchanged.
 
   const handleCancelApproval = (notificationId) => {
     setNotifications(prevNotifications =>
@@ -225,6 +230,8 @@ const Notification = ({ route }) => {
     );
   };
 
+
+  
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.section}>
