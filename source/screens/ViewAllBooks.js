@@ -6,6 +6,8 @@ import { db } from './firebaseConfig';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
+
+// Main component to view all books
 const ViewAllBooks = ({ route }) => {
   const { userName, userId } = route.params;
   const [booksByMe, setBooksByMe] = useState([]);
@@ -16,6 +18,8 @@ const ViewAllBooks = ({ route }) => {
   const [rentRequestSent, setRentRequestSent] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
 
+
+  // Effect to fetch books from Firestore on userId change
   useEffect(() => {
     const fetchBooks = async () => {
       try {
@@ -25,14 +29,17 @@ const ViewAllBooks = ({ route }) => {
           ownerId: doc.data().userId,
           ...doc.data()
         }));
+        
 
+         // Separate books into those added by the current user and others
         const booksAddedByMe = fetchedBooks.filter(book => book.ownerId === userId);
         const booksAddedByOthers = fetchedBooks.filter(book => book.ownerId !== userId);
-
+        
+        // Update state with the fetched books
         setBooksByMe(booksAddedByMe);
         setBooksByOthers(booksAddedByOthers);
-        initializeRentRequestStatus(fetchedBooks);
-        fetchSentRequests();
+        initializeRentRequestStatus(fetchedBooks);// Initialize rent request status
+        fetchSentRequests();// Fetch any previously sent requests
       } catch (error) {
         console.error('Error fetching books:', error);
       }
@@ -40,17 +47,22 @@ const ViewAllBooks = ({ route }) => {
 
     fetchBooks();
   }, [userId]);
+  
 
+  // Effect to filter books based on search query
   useEffect(() => {
     const fetchBooks = async () => {
       try {
+         // Fetch all books again
         const querySnapshot = await getDocs(collection(db, 'books'));
         const fetchedBooks = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ownerId: doc.data().userId,
           ...doc.data()
         }));
+        
 
+         // Filter books by the current user's query
         const filteredBooksByMe = fetchedBooks
           .filter(book => book.ownerId === userId)
           .filter(book =>
@@ -64,7 +76,9 @@ const ViewAllBooks = ({ route }) => {
             book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             book.author.toLowerCase().includes(searchQuery.toLowerCase())
           );
-
+         
+        
+          // Update state with filtered books
         setBooksByMe(filteredBooksByMe);
         setBooksByOthers(filteredBooksByOthers);
         initializeRentRequestStatus(fetchedBooks);
@@ -75,8 +89,10 @@ const ViewAllBooks = ({ route }) => {
     };
 
     fetchBooks();
-  }, [userId, searchQuery]);
+  }, [userId, searchQuery]);// Re-run when userId or searchQuery changes
 
+
+   // Initialize rent request status for each book
   const initializeRentRequestStatus = (fetchedBooks) => {
     const initialRentRequestStatus = {};
     fetchedBooks.forEach(book => {
@@ -85,6 +101,8 @@ const ViewAllBooks = ({ route }) => {
     setRentRequestSent(initialRentRequestStatus);
   };
 
+
+   // Update rent request status for a specific book
   const updateRentRequestStatus = (bookId, status) => {
     setRentRequestSent(prevState => ({
       ...prevState,
@@ -92,6 +110,8 @@ const ViewAllBooks = ({ route }) => {
     }));
   };
 
+
+  // Fetch sent requests from AsyncStorage
   const fetchSentRequests = async () => {
     try {
       const storedSentRequests = await AsyncStorage.getItem('sentRequests');
@@ -103,6 +123,7 @@ const ViewAllBooks = ({ route }) => {
     }
   };
 
+  // Store sent requests to AsyncStorage
   const storeSentRequests = async (sentRequests) => {
     try {
       await AsyncStorage.setItem('sentRequests', JSON.stringify(sentRequests));
@@ -111,8 +132,11 @@ const ViewAllBooks = ({ route }) => {
     }
   };
 
+
+  // Handle sending a rent request
   const handleRentRequest = async (book) => {
     try {
+      // Add a new document to the notifications collection
       await addDoc(collection(db, 'notifications'), {
         senderName: userName,
         senderId: userId,
