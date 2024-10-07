@@ -12,35 +12,45 @@ const NotificationItem = ({ notification, notifications, onApprove, onCancelAppr
     ? new Date(notification.rentDuration.seconds * 1000) < new Date()
     : false;
 
-  const handleApprove = async () => {
-    try {
-      if (showInput && phoneNumber.trim() === '') {
-        Alert.alert('Error', 'Please enter a phone number.');
-        return;
-      }
-
-      await updateDoc(doc(db, 'notifications', notification.id), {
-        status: 'approved',
-        ownerPhoneNumber: phoneNumber.trim(),
-      });
-
-      const otherNotifications = notifications.filter(
-        otherNotification =>
-          otherNotification.id !== notification.id && otherNotification.bookId === notification.bookId
-      );
-
-      for (const otherNotification of otherNotifications) {
-        await updateDoc(doc(db, 'notifications', otherNotification.id), {
-          status: 'Book is not available',
+    const handleApprove = async () => {
+      try {
+        // Define a regular expression for a valid phone number (11 digits)
+        const phoneRegex = /^\d{11}$/;
+    
+        if (showInput && phoneNumber.trim() === '') {
+          Alert.alert('Error', 'Please enter a phone number.');
+          return;
+        }
+        
+        // Check if the phone number matches the expected format
+        if (!phoneRegex.test(phoneNumber)) {
+          Alert.alert('Error', 'Please enter a valid 11-digit phone number.');
+          return;
+        }
+    
+        await updateDoc(doc(db, 'notifications', notification.id), {
+          status: 'approved',
+          ownerPhoneNumber: phoneNumber.trim(),
         });
+    
+        const otherNotifications = notifications.filter(
+          otherNotification =>
+            otherNotification.id !== notification.id && otherNotification.bookId === notification.bookId
+        );
+    
+        for (const otherNotification of otherNotifications) {
+          await updateDoc(doc(db, 'notifications', otherNotification.id), {
+            status: 'Book is not available',
+          });
+        }
+    
+        Alert.alert('Approval Successful', 'Request approved successfully.');
+        onApprove(notification.id);
+      } catch (error) {
+        console.error('Error approving request:', error);
       }
-
-      Alert.alert('Approval Successful', 'Request approved successfully.');
-      onApprove(notification.id);
-    } catch (error) {
-      console.error('Error approving request:', error);
-    }
-  };
+    };
+    
 
   const handleCancelApproval = async () => {
     try {

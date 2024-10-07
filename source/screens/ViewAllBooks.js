@@ -131,24 +131,22 @@ const ViewAllBooks = ({ route }) => {
   };
 
   const onDateChange = (event, date) => {
-    if (event.type === "set" && date) {
+    if (date) {
       setSelectedDate(date);
     }
-    setShowDatePicker(false);
+    setShowDatePicker(false); // Hide the picker after date selection or dismissal
   };
 
   const renderDatePicker = () => {
     return (
       showDatePicker && (
-        <View style={styles.datePickerContainer}>
-          <DateTimePicker
-            value={selectedDate}
-            mode="date"
-            display="default"
-            minimumDate={new Date()}
-            onChange={onDateChange}
-          />
-        </View>
+        <DateTimePicker
+          value={selectedDate || new Date()}
+          mode="date"
+          display="default"
+          minimumDate={new Date()}
+          onChange={onDateChange}
+        />
       )
     );
   };
@@ -174,8 +172,8 @@ const ViewAllBooks = ({ route }) => {
           text: "Delete",
           onPress: async () => {
             try {
-              await deleteDoc(doc(db, 'books', bookId)); // Delete the book from Firestore
-              setBooksByMe(prevBooks => prevBooks.filter(book => book.id !== bookId)); // Update local state
+              await deleteDoc(doc(db, 'books', bookId));
+              setBooksByMe(prevBooks => prevBooks.filter(book => book.id !== bookId));
               Alert.alert('Book Deleted', 'The book has been successfully deleted.');
             } catch (error) {
               console.error('Error deleting book:', error);
@@ -197,12 +195,12 @@ const ViewAllBooks = ({ route }) => {
         <Text style={styles.bookAuthor}>Author: {item.author}</Text>
         <Text style={styles.bookEdition}>Edition: {item.edition}</Text>
         <Text style={styles.bookContent}>Description: {item.content}</Text>
-        {item.ownerId === userId && ( // Show delete icon only for the owner
+        {item.ownerId === userId && (
           <TouchableOpacity onPress={() => handleDeleteBook(item.id)} style={styles.deleteButton}>
             <Icon name="delete" size={24} color="red" />
           </TouchableOpacity>
         )}
-        {item.ownerId !== userId ? (
+        {item.ownerId !== userId && (
           <>
             <TextInput
               style={styles.locationInput}
@@ -228,7 +226,7 @@ const ViewAllBooks = ({ route }) => {
               <Text style={styles.buttonText}>{rentRequestSent[item.id] ? 'Request Sent' : 'Send Rent Request'}</Text>
             </TouchableOpacity>
           </>
-        ) : null}
+        )}
       </View>
     </View>
   );
@@ -273,81 +271,85 @@ const styles = StyleSheet.create({
   },
   searchBar: {
     height: 40,
-    borderColor: 'gray',
+    borderColor: '#ddd',
     borderWidth: 1,
+    paddingHorizontal: 10,
     borderRadius: 5,
-    paddingLeft: 10,
-    marginBottom: 20,
+    marginBottom: 10,
   },
   sectionHeader: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 10,
+    marginTop: 20,
   },
   bookItem: {
     flexDirection: 'row',
     marginBottom: 20,
-    backgroundColor: 'white',
-    borderRadius: 5,
-    padding: 10,
+    padding: 15,
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 5,
-    elevation: 1,
+    elevation: 5,
   },
   bookImage: {
-    width: 60,
-    height: 80,
-    borderRadius: 5,
-    marginRight: 10,
+    width: 80,
+    height: 120,
+    marginRight: 15,
   },
   bookDetails: {
     flex: 1,
   },
   bookUserName: {
-    fontSize: 12,
-    color: 'gray',
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 5,
   },
   bookTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
   },
   bookAuthor: {
-    fontSize: 14,
-    color: 'gray',
+    fontSize: 16,
+    marginBottom: 5,
   },
   bookEdition: {
     fontSize: 14,
-    color: 'gray',
+    color: '#666',
+    marginBottom: 5,
   },
   bookContent: {
-    fontSize: 12,
-    color: 'black',
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 10,
   },
   deleteButton: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
+    alignSelf: 'flex-start',
+    padding: 5,
   },
   locationInput: {
     height: 40,
-    borderColor: 'gray',
+    borderColor: '#ddd',
     borderWidth: 1,
+    paddingHorizontal: 10,
     borderRadius: 5,
     marginBottom: 10,
-    paddingLeft: 10,
   },
   datePickerButton: {
     backgroundColor: '#007bff',
     borderRadius: 5,
     padding: 10,
-    marginBottom: 10,
     alignItems: 'center',
+    marginBottom: 10,
   },
   buttonText: {
-    color: 'white',
+    color: '#fff',
+    fontWeight: 'bold',
   },
   selectedDateText: {
+    fontSize: 14,
     marginBottom: 10,
   },
   rentButton: {
@@ -357,10 +359,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   disabledButton: {
-    backgroundColor: 'gray',
-  },
-  datePickerContainer: {
-    marginVertical: 10,
+    backgroundColor: '#ccc',
   },
 });
 
