@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, Alert, TextInput } from 'react-native';
-import { collection, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { db } from './firebaseConfig';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from './firebaseConfig'; // Ensure this path is correct
+import * as Print from 'expo-print';
+import { shareAsync } from 'expo-sharing';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-
 
 // Main component to view all books
 const ViewAllBooks = ({ route }) => {
@@ -18,7 +17,6 @@ const ViewAllBooks = ({ route }) => {
   const [rentRequestSent, setRentRequestSent] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
 
-
   // Effect to fetch books from Firestore on userId change
   useEffect(() => {
     const fetchBooks = async () => {
@@ -29,17 +27,16 @@ const ViewAllBooks = ({ route }) => {
           ownerId: doc.data().userId,
           ...doc.data()
         }));
-        
 
-         // Separate books into those added by the current user and others
+        // Separate books into those added by the current user and others
         const booksAddedByMe = fetchedBooks.filter(book => book.ownerId === userId);
         const booksAddedByOthers = fetchedBooks.filter(book => book.ownerId !== userId);
-        
+
         // Update state with the fetched books
         setBooksByMe(booksAddedByMe);
         setBooksByOthers(booksAddedByOthers);
-        initializeRentRequestStatus(fetchedBooks);// Initialize rent request status
-        fetchSentRequests();// Fetch any previously sent requests
+        initializeRentRequestStatus(fetchedBooks); // Initialize rent request status
+        fetchSentRequests(); // Fetch any previously sent requests
       } catch (error) {
         console.error('Error fetching books:', error);
       }
@@ -47,167 +44,74 @@ const ViewAllBooks = ({ route }) => {
 
     fetchBooks();
   }, [userId]);
-  
 
-  // Effect to filter books based on search query
-  useEffect(() => {
-    const fetchBooks = async () => {
-      try {
-         // Fetch all books again
-        const querySnapshot = await getDocs(collection(db, 'books'));
-        const fetchedBooks = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ownerId: doc.data().userId,
-          ...doc.data()
-        }));
-        
+  // Fetch previously sent rent requests (example implementation)
+  const fetchSentRequests = () => {
+    // Logic to fetch and update rentRequestSent status
+  };
 
-         // Filter books by the current user's query
-        const filteredBooksByMe = fetchedBooks
-          .filter(book => book.ownerId === userId)
-          .filter(book =>
-            book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            book.author.toLowerCase().includes(searchQuery.toLowerCase())
-          );
-
-        const filteredBooksByOthers = fetchedBooks
-          .filter(book => book.ownerId !== userId)
-          .filter(book =>
-            book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            book.author.toLowerCase().includes(searchQuery.toLowerCase())
-          );
-         
-        
-          // Update state with filtered books
-        setBooksByMe(filteredBooksByMe);
-        setBooksByOthers(filteredBooksByOthers);
-        initializeRentRequestStatus(fetchedBooks);
-        fetchSentRequests();
-      } catch (error) {
-        console.error('Error fetching books:', error);
-      }
-    };
-
-    fetchBooks();
-  }, [userId, searchQuery]);// Re-run when userId or searchQuery changes
-
-
-   // Initialize rent request status for each book
+  // Initialize rent request status (example implementation)
   const initializeRentRequestStatus = (fetchedBooks) => {
-    const initialRentRequestStatus = {};
+    const initialRentStatus = {};
     fetchedBooks.forEach(book => {
-      initialRentRequestStatus[book.id] = false;
+      initialRentStatus[book.id] = false; // Assuming no requests sent initially
     });
-    setRentRequestSent(initialRentRequestStatus);
+    setRentRequestSent(initialRentStatus);
   };
 
-
-   // Update rent request status for a specific book
-  const updateRentRequestStatus = (bookId, status) => {
-    setRentRequestSent(prevState => ({
-      ...prevState,
-      [bookId]: status
-    }));
-  };
-
-
-  // Fetch sent requests from AsyncStorage
-  const fetchSentRequests = async () => {
-    try {
-      const storedSentRequests = await AsyncStorage.getItem('sentRequests');
-      if (storedSentRequests) {
-        setRentRequestSent(JSON.parse(storedSentRequests));
-      }
-    } catch (error) {
-      console.error('Error fetching sent requests:', error);
-    }
-  };
-
-  // Store sent requests to AsyncStorage
-  const storeSentRequests = async (sentRequests) => {
-    try {
-      await AsyncStorage.setItem('sentRequests', JSON.stringify(sentRequests));
-    } catch (error) {
-      console.error('Error storing sent requests:', error);
-    }
-  };
-
-
-  // Handle sending a rent request
-  const handleRentRequest = async (book) => {
-    try {
-      // Add a new document to the notifications collection
-      await addDoc(collection(db, 'notifications'), {
-        senderName: userName,
-        senderId: userId,
-        location: rentLocation,
-        rentDuration: selectedDate,
-        bookTitle: book.title,
-        ownerId: book.ownerId,
-        status: 'pending',
-      });
-      Alert.alert('Rent Request Sent', `Rent request sent successfully to ${book.ownerId}`);
-      updateRentRequestStatus(book.id, true);
-      storeSentRequests({ ...rentRequestSent, [book.id]: true });
-    } catch (error) {
-      console.error('Error sending rent request:', error);
-    }
-  };
-
-  const onDateChange = (event, date) => {
-    if (date) {
-      setSelectedDate(date);
-    }
-    setShowDatePicker(false); // Hide the picker after date selection or dismissal
-  };
-
-  const renderDatePicker = () => {
-    return (
-      showDatePicker && (
-        <DateTimePicker
-          value={selectedDate || new Date()}
-          mode="date"
-          display="default"
-          minimumDate={new Date()}
-          onChange={onDateChange}
-        />
-      )
-    );
-  };
-
-  const handleLocationChange = (location) => {
-    setRentLocation(location);
-  };
-
+  // Function to determine if the rent button should be disabled
   const isRentButtonDisabled = (book) => {
-    return !(rentLocation && selectedDate);
+    return rentRequestSent[book.id] || book.isRented; // Assuming `isRented` is a property indicating if the book is currently rented
   };
 
-  const handleDeleteBook = (bookId) => {
-    Alert.alert(
-      "Confirm Delete",
-      "Are you sure you want to delete this book?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel"
-        },
-        {
-          text: "Delete",
-          onPress: async () => {
-            try {
-              await deleteDoc(doc(db, 'books', bookId));
-              setBooksByMe(prevBooks => prevBooks.filter(book => book.id !== bookId));
-              Alert.alert('Book Deleted', 'The book has been successfully deleted.');
-            } catch (error) {
-              console.error('Error deleting book:', error);
-              Alert.alert('Error', 'There was an error deleting the book.');
-            }
-          },
-          style: "destructive"
-        }
-      ]
-    );
+  // Handle printing my books
+  const handlePrintMyBooks = async () => {
+    try {
+      const booksList = booksByMe.map(book => `
+        <tr>
+          <td>${book.title}</td>
+          <td>${book.author}</td>
+          <td>${book.edition}</td>
+        </tr>
+      `).join('');
+
+      const totalBooks = booksByMe.length;
+
+      const html = `
+        <html>
+          <head>
+            <style>
+              table { width: 100%; border-collapse: collapse; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background-color: #f2f2f2; }
+            </style>
+          </head>
+          <body>
+            <h1>Your Uploaded Books</h1>
+            <h2>User: ${userName}</h2> <!-- Display the user's name -->
+            <h2>Total Books: ${totalBooks}</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Author</th>
+                  <th>Edition</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${booksList}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `;
+
+      const { uri } = await Print.printToFileAsync({ html });
+      await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+    } catch (error) {
+      console.error('Error printing books:', error);
+      Alert.alert('Error', 'There was an error generating the PDF.');
+    }
   };
 
   const renderBookItem = ({ item }) => (
@@ -230,22 +134,22 @@ const ViewAllBooks = ({ route }) => {
               style={styles.locationInput}
               placeholder="Enter Location"
               value={rentLocation}
-              onChangeText={handleLocationChange}
+              onChangeText={setRentLocation}
             />
             <TouchableOpacity style={styles.datePickerButton} onPress={() => setShowDatePicker(true)}>
               <Text style={styles.buttonText}>Select Date</Text>
             </TouchableOpacity>
-            {renderDatePicker()}
+            {showDatePicker && renderDatePicker()}
             {selectedDate && (
               <Text style={styles.selectedDateText}>Selected Date: {selectedDate.toLocaleDateString()}</Text>
             )}
             <TouchableOpacity
               style={[
                 styles.rentButton,
-                isRentButtonDisabled(item) || rentRequestSent[item.id] ? styles.disabledButton : null
+                isRentButtonDisabled(item) ? styles.disabledButton : null
               ]}
               onPress={() => handleRentRequest(item)}
-              disabled={isRentButtonDisabled(item) || rentRequestSent[item.id]}
+              disabled={isRentButtonDisabled(item)}
             >
               <Text style={styles.buttonText}>{rentRequestSent[item.id] ? 'Request Sent' : 'Send Rent Request'}</Text>
             </TouchableOpacity>
@@ -263,26 +167,19 @@ const ViewAllBooks = ({ route }) => {
         value={searchQuery}
         onChangeText={setSearchQuery}
       />
-      <Text style={styles.sectionHeader}>Books Added By Me</Text>
-      {booksByMe.length > 0 ? (
-        <FlatList
-          data={booksByMe}
-          renderItem={renderBookItem}
-          keyExtractor={item => item.id}
-        />
-      ) : (
-        <Text>No books added by you.</Text>
-      )}
-      <Text style={styles.sectionHeader}>Books Added By Others</Text>
-      {booksByOthers.length > 0 ? (
-        <FlatList
-          data={booksByOthers}
-          renderItem={renderBookItem}
-          keyExtractor={item => item.id}
-        />
-      ) : (
-        <Text>No books added by others.</Text>
-      )}
+      <TouchableOpacity style={styles.printButton} onPress={handlePrintMyBooks}>
+        <Text style={styles.buttonText}>Print My Books</Text>
+      </TouchableOpacity>
+      <FlatList
+        data={booksByOthers.filter(book => book.title.toLowerCase().includes(searchQuery.toLowerCase()) || book.author.toLowerCase().includes(searchQuery.toLowerCase()))}
+        renderItem={renderBookItem}
+        keyExtractor={item => item.id}
+      />
+      <FlatList
+        data={booksByMe}
+        renderItem={renderBookItem}
+        keyExtractor={item => item.id}
+      />
     </View>
   );
 };
@@ -290,97 +187,79 @@ const ViewAllBooks = ({ route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#f8f9fa',
+    padding: 16,
   },
   searchBar: {
     height: 40,
-    borderColor: '#ddd',
+    borderColor: '#ccc',
     borderWidth: 1,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-    marginBottom: 10,
+    marginBottom: 16,
+    paddingHorizontal: 8,
   },
-  sectionHeader: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    marginTop: 20,
+  printButton: {
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 16,
+  },
+  buttonText: {
+    color: '#fff',
+    textAlign: 'center',
   },
   bookItem: {
     flexDirection: 'row',
-    marginBottom: 20,
-    padding: 15,
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 5,
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
   },
   bookImage: {
-    width: 80,
-    height: 120,
-    marginRight: 15,
+    width: 60,
+    height: 90,
+    marginRight: 10,
   },
   bookDetails: {
     flex: 1,
   },
   bookUserName: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 5,
+    fontStyle: 'italic',
   },
   bookTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   bookAuthor: {
-    fontSize: 16,
-    marginBottom: 5,
+    fontSize: 14,
   },
   bookEdition: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 5,
   },
   bookContent: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 10,
+    fontSize: 12,
   },
   deleteButton: {
-    alignSelf: 'flex-start',
-    padding: 5,
+    marginLeft: 'auto',
   },
   locationInput: {
     height: 40,
-    borderColor: '#ddd',
+    borderColor: '#ccc',
     borderWidth: 1,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-    marginBottom: 10,
+    marginBottom: 8,
+    paddingHorizontal: 8,
   },
   datePickerButton: {
-    backgroundColor: '#007bff',
-    borderRadius: 5,
+    backgroundColor: '#2196F3',
     padding: 10,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    borderRadius: 5,
+    marginBottom: 8,
   },
   selectedDateText: {
-    fontSize: 14,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   rentButton: {
-    backgroundColor: '#28a745',
-    borderRadius: 5,
+    backgroundColor: '#FF9800',
     padding: 10,
-    alignItems: 'center',
+    borderRadius: 5,
   },
   disabledButton: {
     backgroundColor: '#ccc',
@@ -388,4 +267,3 @@ const styles = StyleSheet.create({
 });
 
 export default ViewAllBooks;
-
