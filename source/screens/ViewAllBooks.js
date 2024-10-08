@@ -69,14 +69,15 @@ const ViewAllBooks = ({ route }) => {
     try {
       const booksList = booksByMe.map(book => `
         <tr>
+          <td><img src="${book.imageURL}" style="width: 60px; height: 90px;" /></td>
           <td>${book.title}</td>
           <td>${book.author}</td>
           <td>${book.edition}</td>
         </tr>
       `).join('');
-
+  
       const totalBooks = booksByMe.length;
-
+  
       const html = `
         <html>
           <head>
@@ -84,15 +85,17 @@ const ViewAllBooks = ({ route }) => {
               table { width: 100%; border-collapse: collapse; }
               th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
               th { background-color: #f2f2f2; }
+              img { max-width: 60px; max-height: 90px; }
             </style>
           </head>
           <body>
-            <h1>Your Uploaded Books</h1>
-            <h2>User: ${userName}</h2> <!-- Display the user's name -->
+            <h1>My Uploaded Books</h1>
+            <h2>User: ${userName}</h2>
             <h2>Total Books: ${totalBooks}</h2>
             <table>
               <thead>
                 <tr>
+                  <th>Image</th>
                   <th>Title</th>
                   <th>Author</th>
                   <th>Edition</th>
@@ -105,7 +108,7 @@ const ViewAllBooks = ({ route }) => {
           </body>
         </html>
       `;
-
+  
       const { uri } = await Print.printToFileAsync({ html });
       await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
     } catch (error) {
@@ -113,6 +116,7 @@ const ViewAllBooks = ({ route }) => {
       Alert.alert('Error', 'There was an error generating the PDF.');
     }
   };
+  
 
   const renderBookItem = ({ item }) => (
     <View style={styles.bookItem}>

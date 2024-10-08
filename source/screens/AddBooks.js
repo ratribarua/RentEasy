@@ -71,41 +71,45 @@ const AddBooks = ({ route }) => {
     }
   };
 
-  const handlePostBook = async () => {
+const handlePostBook = async () => {
     try {
-      const imageName = `${newBookTitle}_${Date.now().toString()}`;
-      let imageURL = null;
+        const imageName = `${newBookTitle}_${Date.now().toString()}`;
+        let imageURL = null;
 
-      if (image) {
-        imageURL = await uploadImage(imageName);
-      }
+        if (image) {
+            imageURL = await uploadImage(imageName);
+        }
 
-      const bookData = {
-        title: newBookTitle,
-        author: newBookAuthor,
-        edition: newBookEdition,
-        content: newBookContent,
-        imageURL: imageURL,
-        userName: userName,
-        userId: userId,
-      };
+        const bookData = {
+            title: newBookTitle,
+            author: newBookAuthor,
+            edition: newBookEdition,
+            content: newBookContent,
+            imageURL: imageURL,
+            userName: userName,
+            userId: userId,
+        };
 
-      const booksRef = collection(db, 'books');
-      await addDoc(booksRef, bookData);
+        const booksRef = collection(db, 'books');
+        await addDoc(booksRef, bookData);
 
-      setNewBookTitle('');
-      setNewBookAuthor('');
-      setNewBookEdition('');
-      setNewBookContent('');
-      setImage(null);
+        // Reset form fields
+        setNewBookTitle('');
+        setNewBookAuthor('');
+        setNewBookEdition('');
+        setNewBookContent('');
+        setImage(null);
 
-      Alert.alert('Success', 'Book added successfully');
-      console.log('Book added successfully');
+        Alert.alert('Success', 'Book added successfully', [
+            { text: 'OK', onPress: () => navigation.navigate('ViewAllBooks') } // Navigate to ViewAllBooks after adding the book
+        ]);
+        console.log('Book added successfully');
     } catch (error) {
-      console.error('Error posting book:', error);
-      Alert.alert('Error', 'Failed to add book. Please try again.');
+        console.error('Error posting book:', error);
+        Alert.alert('Error', 'Failed to add book. Please try again.');
     }
-  };
+};
+
 
   const uploadImage = async (imageName) => {
     try {

@@ -192,50 +192,58 @@ const handleNewNotification = () => {
         }
     };
 
-    // Post new blog
     const handlePostBlog = async () => {
         try {
             const date = new Date().toISOString();
             let imageURL = null;
-
+    
             // Check if an image is selected
             if (image) {
                 // Upload the image to Firebase Storage
                 imageURL = await uploadImage(userData.userName);
             }
-
+    
+            // Validate blog data
+            if (!newBlogTitle.trim() || !newBlogContent.trim()) {
+                Alert.alert('Validation Error', 'Please enter both title and content.');
+                return; // Exit the function if validation fails
+            }
+    
             // Simplify the structure of blogData
             const blogData = {
                 title: newBlogTitle,
                 content: newBlogContent,
-                likes: 0, // Initialize likes with 0
-                dislikes: 0, // Initialize dislikes with 0
-                comments: [], // Initialize comments as an empty array
+                likes: 0,
+                dislikes: 0,
+                comments: [],
                 date: date,
                 imageURL: imageURL,
-                userName: userData.userName, // Add userName to blogData
-                userId: userData.userRef // Add userId to blogData
+                userName: userData.userName,
+                userId: userData.userRef
             };
-
+    
             // Add the blog data to Firestore
             const blogsRef = collection(db, 'blogs');
             const docRef = await addDoc(blogsRef, blogData);
             const blogId = docRef.id; // Get the ID of the newly added blog
-
+    
             console.log('Blog posted successfully!');
-
+    
             // Reset input text and image
             setNewBlogTitle('');
             setNewBlogContent('');
             setImage(null);
-
-            // Provide user feedback or navigate back to the profile screen
-            Alert.alert('Success', 'Blog posted successfully', [{ text: 'OK', onPress: () => navigation.navigate('ProfileScreen') }]);
+    
+            // Provide user feedback and navigate to BlogScreen
+            Alert.alert('Success', 'Blog posted successfully', [
+                { text: 'OK', onPress: () => navigation.navigate('BlogScreen') }
+            ]);
         } catch (error) {
             console.error('Error posting blog:', error);
             Alert.alert('Error', 'Failed to post blog. Please try again.');
         }
     };
+    
 
     // Function to navigate to ViewAllBooks page with userName
     const navigateToViewAllBooks = (userName, userId) => {
